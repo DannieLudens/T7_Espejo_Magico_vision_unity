@@ -1,0 +1,32 @@
+# Unity YAML
+*.meta merge=unityyamlmerge eol=lf
+*.unity merge=unityyamlmerge eol=lf
+*.prefab merge=unityyamlmerge eol=lf
+*.physicsMaterial2D merge=unityyamlmerge eol=lf
+*.physicsMaterial merge=unityyamlmerge eol=lf
+*.asset merge=unityyamlmerge eol=lf
+*.guiskin merge=unityyamlmerge eol=lf
+*.fontsettings merge=unityyamlmerge eol=lf
+*.controller merge=unityyamlmerge eol=lf
+
+# Archivos binarios
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.psd binary
+*.pdf binary
+*.mp3 binary
+*.wav binary
+*.ogg binary
+*.mp4 binary
+*.mov binary
+*.fbx binary
+*.blend binary
+*.obj binary
+*.onnx binary
+*.pt binary
+*.dll binary
+*.exe binary
+*.apk binary
+*.aab binary
