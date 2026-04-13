@@ -35,3 +35,10 @@ Assets/AssetStoreTools*
 
 # JetBrains
 .idea/
+
+runs/
+Training_DataSet_v1_YOLOv11/
+venv/
+*.pt
+*.avi
+best.onnx

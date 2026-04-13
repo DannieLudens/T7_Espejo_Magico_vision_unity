@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using Unity.InferenceEngine;
+using TMPro;
 
 public class ObjectDetector : MonoBehaviour
 {
@@ -14,25 +14,33 @@ public class ObjectDetector : MonoBehaviour
     public float umbralConfianza = 0.5f;
 
     [Header("UI Feedback")]
-    public TextMeshProUGUI textoDeteccion;
+    public TMP_Text textoNombre;
+    public TMP_Text textoDescripcion;
+    public TMP_Text textoConfianza;
 
     private Model modeloCargado;
     private Worker worker;
 
     private string[] etiquetas = new string[]
     {
-        "persona", "bicicleta", "auto", "moto", "avion", "bus", "tren", "camion",
-        "bote", "semaforo", "boca_de_incendio", "stop", "parquimetro", "banco",
-        "pajaro", "gato", "perro", "caballo", "oveja", "vaca", "elefante", "oso",
-        "cebra", "jirafa", "mochila", "paraguas", "bolso", "corbata", "maleta",
-        "frisbee", "esquis", "snowboard", "balon", "cometa", "bate", "guante",
-        "patineta", "surf", "raqueta", "botella", "copa", "taza", "tenedor",
-        "cuchillo", "cuchara", "tazon", "banana", "manzana", "sandwich", "naranja",
-        "brocoli", "zanahoria", "perro_caliente", "pizza", "dona", "torta", "silla",
-        "sofa", "planta", "cama", "mesa", "inodoro", "tv", "laptop", "mouse",
-        "control", "teclado", "celular", "microondas", "horno", "tostadora",
-        "lavaplatos", "nevera", "libro", "reloj", "jarron", "tijeras", "peluche",
-        "secador", "cepillo_dientes"
+        "Base_Maquillaje",
+        "CajaDeMaquillaje",
+        "Delineador_Lapiz",
+        "Delineador_Pincel",
+        "Labial",
+        "Pintucaritas",
+        "Polvo_Brocha"
+    };
+
+    private string[] descripciones = new string[]
+    {
+        "La base unifica el tono de la piel y proporciona una cobertura uniforme para el maquillaje de televisión.",
+        "Contiene los productos esenciales organizados para el proceso de maquillaje profesional.",
+        "Define y resalta los ojos con precisión, ideal para looks de televisión de alta definición.",
+        "Permite trazos más fluidos y precisos para delinear ojos con mayor control.",
+        "Da color y definición a los labios, esencial para que el rostro se vea completo en cámara.",
+        "Pigmento especial para el rostro que garantiza colores vibrantes bajo las luces del set.",
+        "Fija el maquillaje y elimina brillos no deseados para una apariencia perfecta en televisión."
     };
 
     void Start()
@@ -57,18 +65,16 @@ public class ObjectDetector : MonoBehaviour
 
         var cpuOutput = output.ReadbackAndClone();
 
+        int numDetecciones = cpuOutput.shape[2];
         float mejorConfianza = 0f;
         int mejorClase = -1;
 
-        int numDetecciones = cpuOutput.shape[2];
-        int numClases = cpuOutput.shape[1] - 4;
-
         for (int i = 0; i < numDetecciones; i++)
         {
-            for (int c = 0; c < numClases; c++)
+            for (int c = 0; c < etiquetas.Length; c++)
             {
                 float confianza = cpuOutput[0, 4 + c, i];
-                if (confianza > mejorConfianza)
+                if (confianza > mejorConfianza && confianza > umbralConfianza)
                 {
                     mejorConfianza = confianza;
                     mejorClase = c;
@@ -76,18 +82,20 @@ public class ObjectDetector : MonoBehaviour
             }
         }
 
-        cpuOutput.Dispose();
-
-        if (mejorConfianza >= umbralConfianza && mejorClase >= 0 && mejorClase < etiquetas.Length)
+        if (mejorClase >= 0)
         {
-            string etiqueta = etiquetas[mejorClase];
-            textoDeteccion.text = $"Detectado: {etiqueta} ({(mejorConfianza * 100f):F1}%)";
-            Debug.Log($"Objeto detectado: {etiqueta} con {(mejorConfianza * 100f):F1}% de confianza");
+            textoNombre.text = etiquetas[mejorClase].Replace("_", " ");
+            textoDescripcion.text = descripciones[mejorClase];
+            textoConfianza.text = $"Confianza: {(mejorConfianza * 100f):F1}%";
         }
         else
         {
-            textoDeteccion.text = "Buscando objeto...";
+            textoNombre.text = "Buscando objeto...";
+            textoDescripcion.text = "Muestra un objeto frente a la cámara para ver su descripción";
+            textoConfianza.text = "Confianza: -";
         }
+
+        cpuOutput.Dispose();
     }
 
     void OnDestroy()
