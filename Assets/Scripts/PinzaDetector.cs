@@ -111,7 +111,8 @@ public class PinzaDetector : MonoBehaviour
         // Invertir X porque la camara esta espejada
         float indiceX = indice.x;
         float indiceY = 1f - indice.y;
-        Debug.Log($"Indice X:{indiceX:F3} Y:{indiceY:F3} | Pantalla X:{indiceX * Screen.width:F0} Y:{indiceY * Screen.height:F0}");
+        // debug para verificar coordenadas
+        //Debug.Log($"Indice X:{indiceX:F3} Y:{indiceY:F3} | Pantalla X:{indiceX * Screen.width:F0} Y:{indiceY * Screen.height:F0}");
 
         // Mover cursor
         if (cursorMano != null && canvasRect != null)

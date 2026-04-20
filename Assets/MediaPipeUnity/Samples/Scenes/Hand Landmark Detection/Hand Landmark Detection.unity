@@ -847,7 +847,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.28264874, b: 0.3137255, a: 1}
+  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.3137255, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -906,7 +906,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.1, y: 0.1}
   m_AnchorMax: {x: 0.9, y: 0.2}
-  m_AnchoredPosition: {x: 0, y: 47.199913}
+  m_AnchoredPosition: {x: 0, y: 47.19989}
   m_SizeDelta: {x: -16, y: -16}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &894734927
@@ -1234,13 +1234,13 @@ MonoBehaviour:
   - rectTransform: {fileID: 1881810779}
     imagenPanel: {fileID: 1881810780}
     escenaDestino: Experiencia_Presentadora
-    colorNormal: {r: 0.19607843, g: 0.19607843, b: 0.3137255, a: 1}
-    colorHover: {r: 0.3921569, g: 0.5882353, b: 1, a: 1}
+    colorNormal: {r: 0.17353547, g: 0.31446534, b: 0.1730548, a: 1}
+    colorHover: {r: 0.17254902, g: 0.62352943, b: 0.17254902, a: 1}
   - rectTransform: {fileID: 1687559568}
     imagenPanel: {fileID: 1687559569}
     escenaDestino: Experiencia_Presentadora
-    colorNormal: {r: 0.19607845, g: 0.19607845, b: 0.3137255, a: 1}
-    colorHover: {r: 0.39215687, g: 0.5882353, b: 1, a: 1}
+    colorNormal: {r: 0.43137255, g: 0.25490198, b: 0.39607844, a: 1}
+    colorHover: {r: 0.734, g: 0.19817999, b: 0.6268361, a: 1}
   - rectTransform: {fileID: 739996863}
     imagenPanel: {fileID: 739996864}
     escenaDestino: Experiencia_Presentadora
@@ -1249,8 +1249,8 @@ MonoBehaviour:
   - rectTransform: {fileID: 1400142075}
     imagenPanel: {fileID: 1400142073}
     escenaDestino: Experiencia_Presentadora
-    colorNormal: {r: 0.19607845, g: 0.19607845, b: 0.3137255, a: 1}
-    colorHover: {r: 0.3921569, g: 0.5882353, b: 1, a: 1}
+    colorNormal: {r: 0.37254903, g: 0.3647059, b: 0.23137255, a: 1}
+    colorHover: {r: 0.806, g: 0.7700435, b: 0.15878198, a: 1}
 --- !u!224 &1229135957 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3259285889726014650, guid: 5713b959e3c77a58fb258133fc8e4aef, type: 3}
@@ -1287,7 +1287,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.28264874, b: 0.3137255, a: 1}
+  m_Color: {r: 0.37106913, g: 0.36441296, b: 0.22987613, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1740,7 +1740,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.3137255, a: 1}
+  m_Color: {r: 0.42767292, g: 0.2541829, b: 0.3921836, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2080,7 +2080,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.3137255, a: 1}
+  m_Color: {r: 0.17254902, g: 0.3137255, b: 0.17254902, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2277,7 +2277,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.40757, y: 0.0167}
   m_AnchorMax: {x: 0.5794, y: 0.1867}
-  m_AnchoredPosition: {x: -0.099975586, y: -0.4000244}
+  m_AnchoredPosition: {x: -0.099975586, y: -0.40014648}
   m_SizeDelta: {x: 2054, y: 1143}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2044684674
@@ -2352,7 +2352,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.1, y: 0.7}
   m_AnchorMax: {x: 0.9, y: 0.82}
-  m_AnchoredPosition: {x: 0, y: 83}
+  m_AnchoredPosition: {x: 0, y: 83.000015}
   m_SizeDelta: {x: -16, y: -16}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2054246749
