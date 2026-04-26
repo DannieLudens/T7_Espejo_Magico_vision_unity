@@ -154,7 +154,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.40757, y: 0.0167}
   m_AnchorMax: {x: 0.5794, y: 0.1867}
-  m_AnchoredPosition: {x: -0.10958862, y: -2.1989746}
+  m_AnchoredPosition: {x: -0.10958862, y: 11.700012}
   m_SizeDelta: {x: 2143.6953, y: 1193.3296}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &47114880
@@ -559,10 +559,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1033706531}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.1, y: 0.05}
-  m_AnchorMax: {x: 0.9, y: 0.15}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 832.27, y: 76.86}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &854633215
 MonoBehaviour:
@@ -1259,7 +1259,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StandbyController
   umbralPinza: 0.05
-  tiempoRequerido: 0.1
+  tiempoRequerido: 0.2
   escenaMenu: 1_Menu_Principal
 --- !u!4 &1346977197
 Transform:

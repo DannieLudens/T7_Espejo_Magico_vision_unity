@@ -113,7 +113,7 @@ public class PinzaDetector : MonoBehaviour
         float indiceY = 1f - indice.y;
         // debug para verificar coordenadas
         //Debug.Log($"Indice X:{indiceX:F3} Y:{indiceY:F3} | Pantalla X:{indiceX * Screen.width:F0} Y:{indiceY * Screen.height:F0}");
-
+        
         // Mover cursor
         if (cursorMano != null && canvasRect != null)
         {
@@ -128,15 +128,12 @@ public class PinzaDetector : MonoBehaviour
         _panelActual = null;
         foreach (var panel in paneles)
         {
-            Vector2 posLocal;
-            bool dentro = RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            panel.rectTransform,
-            new Vector2(indiceX * Screen.width, indiceY * Screen.height),
-            camaraCanvas,
-            out posLocal
-            );
+            float minX = panel.rectTransform.anchorMin.x;
+            float maxX = panel.rectTransform.anchorMax.x;
+            float minY = panel.rectTransform.anchorMin.y;
+            float maxY = panel.rectTransform.anchorMax.y;
 
-            if (dentro && panel.rectTransform.rect.Contains(posLocal))
+            if (indiceX >= minX && indiceX <= maxX && indiceY >= minY && indiceY <= maxY)
             {
                 panel.imagenPanel.color = panel.colorHover;
                 _panelActual = panel;
