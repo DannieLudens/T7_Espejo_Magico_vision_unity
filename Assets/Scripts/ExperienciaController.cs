@@ -72,17 +72,17 @@ public class ExperienciaController : MonoBehaviour
         for (int i = 0; i < videosEducativos.Length; i++)
         {
             _videoActual = i;
-            ActivarObjetoActual(i);
 
-            // Estado 1: video educativo
+            // Solo activar objeto si no es el primer video
+            if (i > 0) ActivarObjetoActual(i - 1);
+
             SetEstado1();
             yield return StartCoroutine(ReproducirVideo(videosEducativos[i]));
 
-            // Solo esperar objeto si no es el ultimo video
             if (i < videosEducativos.Length - 1)
             {
-                // Estado 2: idle esperando objeto
                 SetEstado2();
+                ActivarObjetoActual(i);
                 _esperandoObjeto = true;
                 _deteccionActiva = false;
                 _tiempoSinInteraccion = 0f;
@@ -91,7 +91,6 @@ public class ExperienciaController : MonoBehaviour
             }
         }
 
-        // Todos los videos completados
         UnityEngine.SceneManagement.SceneManager.LoadScene("Pantalla_Final");
     }
 
@@ -241,5 +240,112 @@ public class ExperienciaController : MonoBehaviour
             rect.localScale = Vector3.one * escala;
             yield return null;
         }
+    }
+    public void SaltarAVideo(int indice)
+    {
+        StopAllCoroutines();
+        _videoActual = indice;
+        _esperandoObjeto = false;
+        _deteccionActiva = false;
+        if (_animacionRespiracion != null) StopCoroutine(_animacionRespiracion);
+        
+        // Resetear escala de todos los objetos
+        foreach (var img in imagenesObjetos)
+            if (img != null) img.rectTransform.localScale = Vector3.one;
+        
+        // Marcar objetos anteriores como usados
+        for (int i = 0; i < indice; i++)
+            if (i < imagenesObjetos.Length && imagenesObjetos[i] != null)
+                imagenesObjetos[i].color = colorUsado;
+
+        ActivarObjetoActual(indice);
+        SetEstado1();
+        StartCoroutine(IniciarVideoDirecto(indice));
+    }
+
+    IEnumerator IniciarVideoDirecto(int indice)
+    {
+        yield return new WaitForSeconds(0.5f);
+        yield return StartCoroutine(ReproducirVideo(videosEducativos[indice]));
+
+        if (indice < videosEducativos.Length - 1)
+        {
+            SetEstado2();
+            _esperandoObjeto = true;
+            _deteccionActiva = false;
+            _tiempoSinInteraccion = 0f;
+            yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
+            MarcarObjetoUsado(indice);
+
+            for (int i = indice + 1; i < videosEducativos.Length; i++)
+            {
+                _videoActual = i;
+                ActivarObjetoActual(i);
+                SetEstado1();
+                yield return StartCoroutine(ReproducirVideo(videosEducativos[i]));
+
+                if (i < videosEducativos.Length - 1)
+                {
+                    SetEstado2();
+                    _esperandoObjeto = true;
+                    _deteccionActiva = false;
+                    _tiempoSinInteraccion = 0f;
+                    yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
+                    MarcarObjetoUsado(i);
+                }
+            }
+        }
+
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Pantalla_Final");
+    }
+
+    public void SaltarAIdle(int indice)
+    {
+        StopAllCoroutines();
+        _videoActual = indice;
+        _esperandoObjeto = false;
+        _deteccionActiva = false;
+        if (_animacionRespiracion != null) StopCoroutine(_animacionRespiracion);
+        
+        // Resetear escala de todos los objetos
+        foreach (var img in imagenesObjetos)
+            if (img != null) img.rectTransform.localScale = Vector3.one;
+        
+        for (int i = 0; i < indice; i++)
+            if (i < imagenesObjetos.Length && imagenesObjetos[i] != null)
+                imagenesObjetos[i].color = colorUsado;
+        
+        ActivarObjetoActual(indice);
+        SetEstado2();
+        StartCoroutine(IniciarIdleDirecto(indice));
+    }
+    IEnumerator IniciarIdleDirecto(int indice)
+    {
+        yield return new WaitForSeconds(0.5f);
+        _esperandoObjeto = true;
+        _deteccionActiva = false;
+        _tiempoSinInteraccion = 0f;
+        yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
+        MarcarObjetoUsado(indice);
+        
+        // Continuar con los videos restantes
+        for (int i = indice + 1; i < videosEducativos.Length; i++)
+        {
+            _videoActual = i;
+            ActivarObjetoActual(i);
+            SetEstado1();
+            yield return StartCoroutine(ReproducirVideo(videosEducativos[i]));
+            
+            if (i < videosEducativos.Length - 1)
+            {
+                SetEstado2();
+                _esperandoObjeto = true;
+                _deteccionActiva = false;
+                _tiempoSinInteraccion = 0f;
+                yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
+                MarcarObjetoUsado(i);
+            }
+        }
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Pantalla_Final");
     }
 }
