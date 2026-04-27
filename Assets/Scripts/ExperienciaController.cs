@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Video;
 using UnityEngine.UI;
+using TMPro;
 
 public class ExperienciaController : MonoBehaviour
 {
@@ -9,30 +10,45 @@ public class ExperienciaController : MonoBehaviour
     public VideoPlayer videoPlayer;
 
     [Header("Videos")]
-    public VideoClip[] videosEducativos; // E1, E2, E3, E4, E5
+    public VideoClip[] videosEducativos;
     public VideoClip videoIdle;
 
     [Header("Paneles Estado")]
-    public GameObject panelEstado1; // Lista de pasos - visible durante educativo
+    public GameObject panelEstado1;
 
     [Header("Objetos Secuencia")]
-    public Image[] imagenesObjetos; // 4 imagenes de objetos
+    public Image[] imagenesObjetos;
     public Color colorActivo = Color.white;
     public Color colorUsado = new Color(1f, 1f, 1f, 0.3f);
     public Color colorPendiente = new Color(0.7f, 0.7f, 0.7f, 1f);
 
+    [Header("Clases YOLO esperadas por video")]
+    public string[] clasesEsperadas; // Base_Maquillaje, Polvo_Brocha, etc
+
     [Header("Configuracion")]
     public float timeoutIdle = 30f;
+    public float delayDeteccion = 5f;
+
+    [Header("UI Feedback")]
+    public TMP_Text textoIncorrecto;
 
     private int _videoActual = 0;
-    private bool _enIdle = false;
-    private float _tiempoSinInteraccion = 0f;
     private bool _esperandoObjeto = false;
+    private bool _deteccionActiva = false;
+    private float _tiempoSinInteraccion = 0f;
     private Coroutine _animacionRespiracion;
+
+    public static ExperienciaController Instancia;
+
+    void Awake()
+    {
+        Instancia = this;
+    }
 
     void Start()
     {
         InicializarObjetos();
+        if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
         StartCoroutine(EsperarYComenzar());
     }
 
@@ -56,33 +72,38 @@ public class ExperienciaController : MonoBehaviour
         for (int i = 0; i < videosEducativos.Length; i++)
         {
             _videoActual = i;
-
-            // Activar objeto correspondiente con animacion
             ActivarObjetoActual(i);
 
-            // Estado 1: reproducir video educativo
+            // Estado 1: video educativo
             SetEstado1();
             yield return StartCoroutine(ReproducirVideo(videosEducativos[i]));
 
-            // Estado 2: reproducir idle y esperar objeto
-            SetEstado2();
-            _esperandoObjeto = true;
-            _tiempoSinInteraccion = 0f;
-            yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
-
-            // Objeto correcto mostrado - marcar como usado
-            MarcarObjetoUsado(i);
+            // Solo esperar objeto si no es el ultimo video
+            if (i < videosEducativos.Length - 1)
+            {
+                // Estado 2: idle esperando objeto
+                SetEstado2();
+                _esperandoObjeto = true;
+                _deteccionActiva = false;
+                _tiempoSinInteraccion = 0f;
+                yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
+                MarcarObjetoUsado(i);
+            }
         }
 
-        // Todos los videos completados - ir a pantalla final
+        // Todos los videos completados
         UnityEngine.SceneManagement.SceneManager.LoadScene("Pantalla_Final");
     }
 
     IEnumerator ReproducirVideo(VideoClip clip)
     {
+        videoPlayer.Stop();
+        videoPlayer.isLooping = false;
         videoPlayer.clip = clip;
-        videoPlayer.Play();
+        videoPlayer.Prepare();
         yield return new WaitUntil(() => videoPlayer.isPrepared);
+        videoPlayer.Play();
+        yield return new WaitUntil(() => videoPlayer.isPlaying);
         yield return new WaitUntil(() => !videoPlayer.isPlaying);
     }
 
@@ -91,6 +112,10 @@ public class ExperienciaController : MonoBehaviour
         videoPlayer.clip = videoIdle;
         videoPlayer.isLooping = true;
         videoPlayer.Play();
+
+        // Delay antes de activar deteccion
+        yield return new WaitForSeconds(delayDeteccion);
+        _deteccionActiva = true;
 
         while (_esperandoObjeto)
         {
@@ -110,10 +135,46 @@ public class ExperienciaController : MonoBehaviour
         videoPlayer.isLooping = false;
     }
 
-    public void ObjetoCorrectoDetectado()
+    public void NotificarObjetoDetectado(string claseDetectada)
     {
-        _esperandoObjeto = false;
-        _tiempoSinInteraccion = 0f;
+        if (!_deteccionActiva || !_esperandoObjeto) return;
+
+        string claseEsperada = _videoActual < clasesEsperadas.Length ? clasesEsperadas[_videoActual] : "";
+
+        if (claseDetectada == claseEsperada)
+        {
+            _esperandoObjeto = false;
+            if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
+        }
+        else
+        {
+            StartCoroutine(MostrarObjetoIncorrecto());
+        }
+    }
+
+    public void NotificarClickObjeto(int indiceObjeto)
+    {
+        if (!_deteccionActiva || !_esperandoObjeto) return;
+
+        if (indiceObjeto == _videoActual)
+        {
+            _esperandoObjeto = false;
+            if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
+        }
+        else
+        {
+            StartCoroutine(MostrarObjetoIncorrecto());
+        }
+    }
+
+    IEnumerator MostrarObjetoIncorrecto()
+    {
+        if (textoIncorrecto != null)
+        {
+            textoIncorrecto.gameObject.SetActive(true);
+            yield return new WaitForSeconds(2f);
+            textoIncorrecto.gameObject.SetActive(false);
+        }
     }
 
     void SetEstado1()
@@ -131,7 +192,6 @@ public class ExperienciaController : MonoBehaviour
         for (int i = 0; i < imagenesObjetos.Length; i++)
         {
             if (imagenesObjetos[i] == null) continue;
-
             if (i == indice)
             {
                 imagenesObjetos[i].color = colorActivo;
@@ -142,6 +202,7 @@ public class ExperienciaController : MonoBehaviour
             else if (i < indice)
             {
                 imagenesObjetos[i].color = colorUsado;
+                imagenesObjetos[i].rectTransform.localScale = Vector3.one;
             }
         }
     }
@@ -150,7 +211,6 @@ public class ExperienciaController : MonoBehaviour
     {
         if (_animacionRespiracion != null)
             StopCoroutine(_animacionRespiracion);
-
         if (indice < imagenesObjetos.Length && imagenesObjetos[indice] != null)
         {
             imagenesObjetos[indice].color = colorUsado;

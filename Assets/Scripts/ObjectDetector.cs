@@ -15,7 +15,6 @@ public class ObjectDetector : MonoBehaviour
 
     [Header("UI Feedback")]
     public TMP_Text textoNombre;
-    public TMP_Text textoIncorrecto;
 
     private Model modeloCargado;
     private Worker worker;
@@ -35,7 +34,6 @@ public class ObjectDetector : MonoBehaviour
     {
         modeloCargado = ModelLoader.Load(modeloAsset);
         worker = new Worker(modeloCargado, BackendType.GPUCompute);
-        if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
         Debug.Log("Modelo cargado correctamente.");
     }
 
@@ -74,12 +72,12 @@ public class ObjectDetector : MonoBehaviour
         if (mejorClase >= 0)
         {
             textoNombre.text = $"{etiquetas[mejorClase].Replace("_", " ")} ({(mejorConfianza * 100f):F1}%)";
-            if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
+            if (ExperienciaController.Instancia != null)
+                ExperienciaController.Instancia.NotificarObjetoDetectado(etiquetas[mejorClase]);
         }
         else
         {
             textoNombre.text = "Buscando objeto...";
-            if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
         }
 
         cpuOutput.Dispose();
