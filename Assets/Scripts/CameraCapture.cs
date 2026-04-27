@@ -47,4 +47,12 @@ public class CameraCapture : MonoBehaviour
             webCamTexture = null;
         }
     }    
+    public void ForzarDetener()
+    {
+        if (webCamTexture != null && webCamTexture.isPlaying)
+        {
+            webCamTexture.Stop();
+            webCamTexture = null;
+        }
+    }
 }
