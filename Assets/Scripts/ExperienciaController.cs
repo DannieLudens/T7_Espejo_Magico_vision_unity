@@ -5,7 +5,10 @@ using UnityEngine.UI;
 using TMPro;
 
 public class ExperienciaController : MonoBehaviour
-{
+{   
+    [Header("Menu Opciones")]
+    public GameObject panelMenuOpciones;
+
     [Header("Video Player")]
     public VideoPlayer videoPlayer;
 
@@ -134,6 +137,40 @@ public class ExperienciaController : MonoBehaviour
         videoPlayer.isLooping = false;
     }
 
+    public void AbrirMenuOpciones()
+    {
+        if (panelMenuOpciones != null)
+            panelMenuOpciones.SetActive(true);
+    }
+
+    public void CerrarMenuOpciones()
+    {
+        if (panelMenuOpciones != null)
+            panelMenuOpciones.SetActive(false);
+    }
+
+    public void OpcionVolverMenu()
+    {
+        StopAllCoroutines();
+        videoPlayer.Stop();
+        var camara = FindAnyObjectByType<CameraCapture>();
+        if (camara != null) camara.ForzarDetener();
+        StartCoroutine(CargarEscena("1_Menu_Principal"));
+    }
+
+    public void OpcionSkipFinal()
+    {
+        StopAllCoroutines();
+        videoPlayer.Stop();
+        StartCoroutine(CargarEscena("Pantalla_Final"));
+    }
+
+    IEnumerator CargarEscena(string escena)
+    {
+        yield return new WaitForSeconds(0.5f);
+        UnityEngine.SceneManagement.SceneManager.LoadScene(escena);
+    }
+    
     public void NotificarObjetoDetectado(string claseDetectada)
     {
         if (!_deteccionActiva || !_esperandoObjeto) return;
