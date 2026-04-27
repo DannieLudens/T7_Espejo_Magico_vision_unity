@@ -94,7 +94,7 @@ public class ExperienciaController : MonoBehaviour
             }
         }
 
-        UnityEngine.SceneManagement.SceneManager.LoadScene("Pantalla_Final");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("6_Pantalla_Final");
     }
 
     IEnumerator ReproducirVideo(VideoClip clip)
@@ -162,7 +162,7 @@ public class ExperienciaController : MonoBehaviour
     {
         StopAllCoroutines();
         videoPlayer.Stop();
-        StartCoroutine(CargarEscena("Pantalla_Final"));
+        StartCoroutine(CargarEscena("6_Pantalla_Final"));
     }
 
     IEnumerator CargarEscena(string escena)
@@ -170,7 +170,7 @@ public class ExperienciaController : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         UnityEngine.SceneManagement.SceneManager.LoadScene(escena);
     }
-    
+
     public void NotificarObjetoDetectado(string claseDetectada)
     {
         if (!_deteccionActiva || !_esperandoObjeto) return;
@@ -333,7 +333,7 @@ public class ExperienciaController : MonoBehaviour
             }
         }
 
-        UnityEngine.SceneManagement.SceneManager.LoadScene("Pantalla_Final");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("6_Pantalla_Final");
     }
 
     public void SaltarAIdle(int indice)
@@ -383,6 +383,6 @@ public class ExperienciaController : MonoBehaviour
                 MarcarObjetoUsado(i);
             }
         }
-        UnityEngine.SceneManagement.SceneManager.LoadScene("Pantalla_Final");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("6_Pantalla_Final");
     }
 }
