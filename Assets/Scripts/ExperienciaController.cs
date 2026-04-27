@@ -30,7 +30,7 @@ public class ExperienciaController : MonoBehaviour
     public GameObject panelEstado1;
 
     [Header("Objetos Secuencia")]
-    public Image[] imagenesObjetos;
+    public RawImage[] imagenesObjetos;
     public Color colorActivo = Color.white;
     public Color colorUsado = new Color(1f, 1f, 1f, 0.3f);
     public Color colorPendiente = new Color(0.7f, 0.7f, 0.7f, 1f);
