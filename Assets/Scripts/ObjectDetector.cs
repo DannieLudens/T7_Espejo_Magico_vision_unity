@@ -15,8 +15,7 @@ public class ObjectDetector : MonoBehaviour
 
     [Header("UI Feedback")]
     public TMP_Text textoNombre;
-    public TMP_Text textoDescripcion;
-    public TMP_Text textoConfianza;
+    public TMP_Text textoIncorrecto;
 
     private Model modeloCargado;
     private Worker worker;
@@ -32,21 +31,11 @@ public class ObjectDetector : MonoBehaviour
         "Polvo_Brocha"
     };
 
-    private string[] descripciones = new string[]
-    {
-        "La base unifica el tono de la piel y proporciona una cobertura uniforme para el maquillaje de televisión.",
-        "Contiene los productos esenciales organizados para el proceso de maquillaje profesional.",
-        "Define y resalta los ojos con precisión, ideal para looks de televisión de alta definición.",
-        "Permite trazos más fluidos y precisos para delinear ojos con mayor control.",
-        "Da color y definición a los labios, esencial para que el rostro se vea completo en cámara.",
-        "Pigmento especial para el rostro que garantiza colores vibrantes bajo las luces del set.",
-        "Fija el maquillaje y elimina brillos no deseados para una apariencia perfecta en televisión."
-    };
-
     void Start()
     {
         modeloCargado = ModelLoader.Load(modeloAsset);
         worker = new Worker(modeloCargado, BackendType.GPUCompute);
+        if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
         Debug.Log("Modelo cargado correctamente.");
     }
 
@@ -84,15 +73,13 @@ public class ObjectDetector : MonoBehaviour
 
         if (mejorClase >= 0)
         {
-            textoNombre.text = etiquetas[mejorClase].Replace("_", " ");
-            textoDescripcion.text = descripciones[mejorClase];
-            textoConfianza.text = $"Confianza: {(mejorConfianza * 100f):F1}%";
+            textoNombre.text = $"{etiquetas[mejorClase].Replace("_", " ")} ({(mejorConfianza * 100f):F1}%)";
+            if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
         }
         else
         {
             textoNombre.text = "Buscando objeto...";
-            textoDescripcion.text = "Muestra un objeto frente a la cámara para ver su descripción";
-            textoConfianza.text = "Confianza: -";
+            if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
         }
 
         cpuOutput.Dispose();
