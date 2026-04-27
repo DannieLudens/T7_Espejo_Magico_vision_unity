@@ -15,6 +15,16 @@ public class ExperienciaController : MonoBehaviour
     [Header("Videos")]
     public VideoClip[] videosEducativos;
     public VideoClip videoIdle;
+    
+    [Header("Barra Progreso Continua")]
+    public Slider sliderProgreso;
+    private float _progresoBase = 0f;
+    private float _progresoPorVideo;
+    private bool _actualizandoProgreso = false;
+
+    [Header("Animacion Respiracion")]
+    public AnimationCurve curvaRespiracion = AnimationCurve.EaseInOut(0f, 0.92f, 1f, 1.08f);
+    public float duracionRespiracion = 2.5f;
 
     [Header("Paneles Estado")]
     public GameObject panelEstado1;
@@ -52,7 +62,20 @@ public class ExperienciaController : MonoBehaviour
     {
         InicializarObjetos();
         if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
+        _progresoPorVideo = 1f / videosEducativos.Length;
         StartCoroutine(EsperarYComenzar());
+    }
+
+    void Update()
+    {
+        if (_actualizandoProgreso && videoPlayer.length > 0)
+        {
+            float progresoVideo = (float)(videoPlayer.time / videoPlayer.length);
+            float progresoTotal = _progresoBase + (progresoVideo * _progresoPorVideo);
+            // Debug.Log($"Progreso: {progresoTotal:F3} | Base: {_progresoBase:F3} | Video: {progresoVideo:F3}");
+            if (sliderProgreso != null)
+                sliderProgreso.value = progresoTotal;
+        }
     }
 
     IEnumerator EsperarYComenzar()
@@ -75,6 +98,11 @@ public class ExperienciaController : MonoBehaviour
         for (int i = 0; i < videosEducativos.Length; i++)
         {
             _videoActual = i;
+            // Actualizar barra de progreso
+            if (BarraProgresoController.Instancia != null)
+            BarraProgresoController.Instancia.SetCheckpointActivo(i == 0 ? 0 : (i * 2) - 1);
+            _progresoBase = i * _progresoPorVideo;
+            _actualizandoProgreso = true;
 
             // Solo activar objeto si no es el primer video
             if (i > 0) ActivarObjetoActual(i - 1);
@@ -85,6 +113,11 @@ public class ExperienciaController : MonoBehaviour
             if (i < videosEducativos.Length - 1)
             {
                 SetEstado2();
+                _actualizandoProgreso = false;
+                if (sliderProgreso != null)
+                    sliderProgreso.value = (i + 1) * _progresoPorVideo;
+                if (BarraProgresoController.Instancia != null)
+                    BarraProgresoController.Instancia.SetCheckpointActivo(i * 2);
                 ActivarObjetoActual(i);
                 _esperandoObjeto = true;
                 _deteccionActiva = false;
@@ -162,6 +195,8 @@ public class ExperienciaController : MonoBehaviour
     {
         StopAllCoroutines();
         videoPlayer.Stop();
+        var camara = FindAnyObjectByType<CameraCapture>();
+        if (camara != null) camara.ForzarDetener();
         StartCoroutine(CargarEscena("6_Pantalla_Final"));
     }
 
@@ -254,30 +289,18 @@ public class ExperienciaController : MonoBehaviour
         }
     }
 
-    IEnumerator AnimacionRespiracion(RectTransform rect)
+IEnumerator AnimacionRespiracion(RectTransform rect)
+{
+    float tiempo = 0f;
+    while (true)
     {
-        float velocidad = 1.5f;
-        float minScale = 0.9f;
-        float maxScale = 1.1f;
-        bool creciendo = true;
-        float escala = 1f;
-
-        while (true)
-        {
-            if (creciendo)
-            {
-                escala += Time.deltaTime * velocidad;
-                if (escala >= maxScale) creciendo = false;
-            }
-            else
-            {
-                escala -= Time.deltaTime * velocidad;
-                if (escala <= minScale) creciendo = true;
-            }
-            rect.localScale = Vector3.one * escala;
-            yield return null;
-        }
+        tiempo += Time.deltaTime / duracionRespiracion;
+        if (tiempo > 1f) tiempo = 0f;
+        float escala = curvaRespiracion.Evaluate(tiempo);
+        rect.localScale = Vector3.one * escala;
+        yield return null;
     }
+}
     public void SaltarAVideo(int indice)
     {
         StopAllCoroutines();
