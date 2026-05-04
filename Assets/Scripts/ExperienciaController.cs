@@ -15,6 +15,16 @@ public class ExperienciaController : MonoBehaviour
     [Header("Videos")]
     public VideoClip[] videosEducativos;
     public VideoClip videoIdle;
+
+    [Header("Audio Educativos")]
+    public AudioSource audioSource;
+    public AudioClip[] audioEducativos; // Pres_Noti_M_1 al _5
+
+    [Header("Audio Idle")]
+    public AudioClip audioInstruccion;  // Instruccion.ogg
+    public AudioClip audioAlaEspera;    // AlaEspera.ogg
+    public AudioClip audioCorrecto;     // Correcto.ogg
+    public AudioClip audioIncorrecto;   // Incorrecto.ogg
     
     [Header("Barra Progreso Continua")]
     public Slider sliderProgreso;
@@ -36,11 +46,12 @@ public class ExperienciaController : MonoBehaviour
     public Color colorPendiente = new Color(0.7f, 0.7f, 0.7f, 1f);
 
     [Header("Clases YOLO esperadas por video")]
-    public string[] clasesEsperadas; // Base_Maquillaje, Polvo_Brocha, etc
+    public string[] clasesEsperadas;
 
     [Header("Configuracion")]
     public float timeoutIdle = 30f;
     public float delayDeteccion = 5f;
+    public float intervaloAlaEspera = 10f; // Cada cuanto suena AlaEspera
 
     [Header("UI Feedback")]
     public TMP_Text textoIncorrecto;
@@ -50,6 +61,7 @@ public class ExperienciaController : MonoBehaviour
     private bool _deteccionActiva = false;
     private float _tiempoSinInteraccion = 0f;
     private Coroutine _animacionRespiracion;
+    private Coroutine _coroutinaAlaEspera;
 
     public static ExperienciaController Instancia;
 
@@ -72,7 +84,6 @@ public class ExperienciaController : MonoBehaviour
         {
             float progresoVideo = (float)(videoPlayer.time / videoPlayer.length);
             float progresoTotal = _progresoBase + (progresoVideo * _progresoPorVideo);
-            // Debug.Log($"Progreso: {progresoTotal:F3} | Base: {_progresoBase:F3} | Video: {progresoVideo:F3}");
             if (sliderProgreso != null)
                 sliderProgreso.value = progresoTotal;
         }
@@ -93,21 +104,84 @@ public class ExperienciaController : MonoBehaviour
         }
     }
 
+    void ReproducirAudio(int indice)
+    {
+        if (audioSource == null) return;
+        if (audioEducativos == null || indice >= audioEducativos.Length) return;
+        if (audioEducativos[indice] == null) return;
+
+        audioSource.Stop();
+        audioSource.clip = audioEducativos[indice];
+        audioSource.Play();
+    }
+
+    void ReproducirAudioIdle(AudioClip clip)
+    {
+        if (audioSource == null || clip == null) return;
+        // Solo reproduce si no hay otro audio corriendo
+        if (!audioSource.isPlaying)
+        {
+            audioSource.clip = clip;
+            audioSource.Play();
+        }
+    }
+
+    // Espera a que termine el audio educativo y luego reproduce Instruccion
+    IEnumerator EsperarAudioYReproducirInstruccion()
+    {
+        // Esperar a que termine el audio educativo anterior
+        yield return new WaitUntil(() => !audioSource.isPlaying);
+        
+        // Reproducir instruccion
+        if (audioInstruccion != null)
+        {
+            audioSource.clip = audioInstruccion;
+            audioSource.Play();
+            // Esperar a que termine Instruccion antes de iniciar AlaEspera
+            yield return new WaitUntil(() => !audioSource.isPlaying);
+        }
+
+        // Iniciar loop de AlaEspera cada intervaloAlaEspera segundos
+        _coroutinaAlaEspera = StartCoroutine(LoopAlaEspera());
+    }
+
+    IEnumerator LoopAlaEspera()
+    {
+        while (_esperandoObjeto)
+        {
+            yield return new WaitForSeconds(intervaloAlaEspera);
+            if (_esperandoObjeto && !audioSource.isPlaying)
+            {
+                audioSource.clip = audioAlaEspera;
+                audioSource.Play();
+            }
+        }
+    }
+
+    void DetenerAudiosIdle()
+    {
+        if (_coroutinaAlaEspera != null)
+        {
+            StopCoroutine(_coroutinaAlaEspera);
+            _coroutinaAlaEspera = null;
+        }
+        if (audioSource != null) audioSource.Stop();
+    }
+
     IEnumerator SecuenciaExperiencia()
     {
         for (int i = 0; i < videosEducativos.Length; i++)
         {
             _videoActual = i;
-            // Actualizar barra de progreso
             if (BarraProgresoController.Instancia != null)
-            BarraProgresoController.Instancia.SetCheckpointActivo(i == 0 ? 0 : (i * 2) - 1);
+                BarraProgresoController.Instancia.SetCheckpointActivo(i == 0 ? 0 : (i * 2) - 1);
             _progresoBase = i * _progresoPorVideo;
             _actualizandoProgreso = true;
 
-            // Solo activar objeto si no es el primer video
             if (i > 0) ActivarObjetoActual(i - 1);
 
             SetEstado1();
+            ReproducirAudio(i);
             yield return StartCoroutine(ReproducirVideo(videosEducativos[i]));
 
             if (i < videosEducativos.Length - 1)
@@ -122,7 +196,12 @@ public class ExperienciaController : MonoBehaviour
                 _esperandoObjeto = true;
                 _deteccionActiva = false;
                 _tiempoSinInteraccion = 0f;
+
+                // Iniciar audio idle (espera que termine el educativo primero)
+                StartCoroutine(EsperarAudioYReproducirInstruccion());
+
                 yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
+                DetenerAudiosIdle();
                 MarcarObjetoUsado(i);
             }
         }
@@ -148,7 +227,6 @@ public class ExperienciaController : MonoBehaviour
         videoPlayer.isLooping = true;
         videoPlayer.Play();
 
-        // Delay antes de activar deteccion
         yield return new WaitForSeconds(delayDeteccion);
         _deteccionActiva = true;
 
@@ -158,6 +236,7 @@ public class ExperienciaController : MonoBehaviour
             if (_tiempoSinInteraccion >= timeoutIdle)
             {
                 videoPlayer.Stop();
+                DetenerAudiosIdle();
                 var camara = FindAnyObjectByType<CameraCapture>();
                 if (camara != null) camara.ForzarDetener();
                 yield return new WaitForSeconds(0.5f);
@@ -186,6 +265,7 @@ public class ExperienciaController : MonoBehaviour
     {
         StopAllCoroutines();
         videoPlayer.Stop();
+        DetenerAudiosIdle();
         var camara = FindAnyObjectByType<CameraCapture>();
         if (camara != null) camara.ForzarDetener();
         StartCoroutine(CargarEscena("1_Menu_Principal"));
@@ -195,6 +275,7 @@ public class ExperienciaController : MonoBehaviour
     {
         StopAllCoroutines();
         videoPlayer.Stop();
+        DetenerAudiosIdle();
         var camara = FindAnyObjectByType<CameraCapture>();
         if (camara != null) camara.ForzarDetener();
         StartCoroutine(CargarEscena("6_Pantalla_Final"));
@@ -215,6 +296,13 @@ public class ExperienciaController : MonoBehaviour
         if (claseDetectada == claseEsperada)
         {
             _esperandoObjeto = false;
+            DetenerAudiosIdle();
+            // Reproducir audio correcto
+            if (audioCorrecto != null)
+            {
+                audioSource.clip = audioCorrecto;
+                audioSource.Play();
+            }
             if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
         }
         else
@@ -230,6 +318,12 @@ public class ExperienciaController : MonoBehaviour
         if (indiceObjeto == _videoActual)
         {
             _esperandoObjeto = false;
+            DetenerAudiosIdle();
+            if (audioCorrecto != null)
+            {
+                audioSource.clip = audioCorrecto;
+                audioSource.Play();
+            }
             if (textoIncorrecto != null) textoIncorrecto.gameObject.SetActive(false);
         }
         else
@@ -241,11 +335,19 @@ public class ExperienciaController : MonoBehaviour
     IEnumerator MostrarObjetoIncorrecto()
     {
         if (textoIncorrecto != null)
-        {
             textoIncorrecto.gameObject.SetActive(true);
-            yield return new WaitForSeconds(2f);
-            textoIncorrecto.gameObject.SetActive(false);
+
+        // Audio incorrecto solo si no hay otro audio sonando
+        if (audioSource != null && !audioSource.isPlaying && audioIncorrecto != null)
+        {
+            audioSource.clip = audioIncorrecto;
+            audioSource.Play();
         }
+
+        yield return new WaitForSeconds(2f);
+
+        if (textoIncorrecto != null)
+            textoIncorrecto.gameObject.SetActive(false);
     }
 
     void SetEstado1()
@@ -289,31 +391,31 @@ public class ExperienciaController : MonoBehaviour
         }
     }
 
-IEnumerator AnimacionRespiracion(RectTransform rect)
-{
-    float tiempo = 0f;
-    while (true)
+    IEnumerator AnimacionRespiracion(RectTransform rect)
     {
-        tiempo += Time.deltaTime / duracionRespiracion;
-        if (tiempo > 1f) tiempo = 0f;
-        float escala = curvaRespiracion.Evaluate(tiempo);
-        rect.localScale = Vector3.one * escala;
-        yield return null;
+        float tiempo = 0f;
+        while (true)
+        {
+            tiempo += Time.deltaTime / duracionRespiracion;
+            if (tiempo > 1f) tiempo = 0f;
+            float escala = curvaRespiracion.Evaluate(tiempo);
+            rect.localScale = Vector3.one * escala;
+            yield return null;
+        }
     }
-}
+
     public void SaltarAVideo(int indice)
     {
         StopAllCoroutines();
+        DetenerAudiosIdle();
         _videoActual = indice;
         _esperandoObjeto = false;
         _deteccionActiva = false;
         if (_animacionRespiracion != null) StopCoroutine(_animacionRespiracion);
         
-        // Resetear escala de todos los objetos
         foreach (var img in imagenesObjetos)
             if (img != null) img.rectTransform.localScale = Vector3.one;
         
-        // Marcar objetos anteriores como usados
         for (int i = 0; i < indice; i++)
             if (i < imagenesObjetos.Length && imagenesObjetos[i] != null)
                 imagenesObjetos[i].color = colorUsado;
@@ -326,6 +428,7 @@ IEnumerator AnimacionRespiracion(RectTransform rect)
     IEnumerator IniciarVideoDirecto(int indice)
     {
         yield return new WaitForSeconds(0.5f);
+        ReproducirAudio(indice);
         yield return StartCoroutine(ReproducirVideo(videosEducativos[indice]));
 
         if (indice < videosEducativos.Length - 1)
@@ -334,7 +437,9 @@ IEnumerator AnimacionRespiracion(RectTransform rect)
             _esperandoObjeto = true;
             _deteccionActiva = false;
             _tiempoSinInteraccion = 0f;
+            StartCoroutine(EsperarAudioYReproducirInstruccion());
             yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
+            DetenerAudiosIdle();
             MarcarObjetoUsado(indice);
 
             for (int i = indice + 1; i < videosEducativos.Length; i++)
@@ -342,6 +447,7 @@ IEnumerator AnimacionRespiracion(RectTransform rect)
                 _videoActual = i;
                 ActivarObjetoActual(i);
                 SetEstado1();
+                ReproducirAudio(i);
                 yield return StartCoroutine(ReproducirVideo(videosEducativos[i]));
 
                 if (i < videosEducativos.Length - 1)
@@ -350,7 +456,9 @@ IEnumerator AnimacionRespiracion(RectTransform rect)
                     _esperandoObjeto = true;
                     _deteccionActiva = false;
                     _tiempoSinInteraccion = 0f;
+                    StartCoroutine(EsperarAudioYReproducirInstruccion());
                     yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
+                    DetenerAudiosIdle();
                     MarcarObjetoUsado(i);
                 }
             }
@@ -362,12 +470,12 @@ IEnumerator AnimacionRespiracion(RectTransform rect)
     public void SaltarAIdle(int indice)
     {
         StopAllCoroutines();
+        DetenerAudiosIdle();
         _videoActual = indice;
         _esperandoObjeto = false;
         _deteccionActiva = false;
         if (_animacionRespiracion != null) StopCoroutine(_animacionRespiracion);
         
-        // Resetear escala de todos los objetos
         foreach (var img in imagenesObjetos)
             if (img != null) img.rectTransform.localScale = Vector3.one;
         
@@ -379,21 +487,24 @@ IEnumerator AnimacionRespiracion(RectTransform rect)
         SetEstado2();
         StartCoroutine(IniciarIdleDirecto(indice));
     }
+
     IEnumerator IniciarIdleDirecto(int indice)
     {
         yield return new WaitForSeconds(0.5f);
         _esperandoObjeto = true;
         _deteccionActiva = false;
         _tiempoSinInteraccion = 0f;
+        StartCoroutine(EsperarAudioYReproducirInstruccion());
         yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
+        DetenerAudiosIdle();
         MarcarObjetoUsado(indice);
         
-        // Continuar con los videos restantes
         for (int i = indice + 1; i < videosEducativos.Length; i++)
         {
             _videoActual = i;
             ActivarObjetoActual(i);
             SetEstado1();
+            ReproducirAudio(i);
             yield return StartCoroutine(ReproducirVideo(videosEducativos[i]));
             
             if (i < videosEducativos.Length - 1)
@@ -402,7 +513,9 @@ IEnumerator AnimacionRespiracion(RectTransform rect)
                 _esperandoObjeto = true;
                 _deteccionActiva = false;
                 _tiempoSinInteraccion = 0f;
+                StartCoroutine(EsperarAudioYReproducirInstruccion());
                 yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
+                DetenerAudiosIdle();
                 MarcarObjetoUsado(i);
             }
         }
