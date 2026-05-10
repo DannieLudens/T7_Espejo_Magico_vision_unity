@@ -49,7 +49,7 @@ public class ExperienciaController : MonoBehaviour
     public string[] clasesEsperadas;
 
     [Header("Configuracion")]
-    public float timeoutIdle = 30f;
+    public float timeoutPorInactividad = 30f;
     public float delayDeteccion = 5f;
     public float intervaloAlaEspera = 10f; // Cada cuanto suena AlaEspera
 
@@ -168,7 +168,7 @@ public class ExperienciaController : MonoBehaviour
         if (audioSource != null) audioSource.Stop();
     }
 
-    IEnumerator SecuenciaExperiencia()
+IEnumerator SecuenciaExperiencia()
     {
         for (int i = 0; i < videosEducativos.Length; i++)
         {
@@ -197,7 +197,6 @@ public class ExperienciaController : MonoBehaviour
                 _deteccionActiva = false;
                 _tiempoSinInteraccion = 0f;
 
-                // Iniciar audio idle (espera que termine el educativo primero)
                 StartCoroutine(EsperarAudioYReproducirInstruccion());
 
                 yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
@@ -206,6 +205,12 @@ public class ExperienciaController : MonoBehaviour
             }
         }
 
+        // Liberar camara antes de navegar a pantalla final
+        videoPlayer.Stop();
+        DetenerAudiosIdle();
+        var camara = FindAnyObjectByType<CameraCapture>();
+        if (camara != null) camara.ForzarDetener();
+        yield return new WaitForSeconds(0.5f);
         UnityEngine.SceneManagement.SceneManager.LoadScene("6_Pantalla_Final");
     }
 
@@ -233,14 +238,14 @@ public class ExperienciaController : MonoBehaviour
         while (_esperandoObjeto)
         {
             _tiempoSinInteraccion += Time.deltaTime;
-            if (_tiempoSinInteraccion >= timeoutIdle)
+            if (_tiempoSinInteraccion >= timeoutPorInactividad)
             {
                 videoPlayer.Stop();
                 DetenerAudiosIdle();
                 var camara = FindAnyObjectByType<CameraCapture>();
                 if (camara != null) camara.ForzarDetener();
                 yield return new WaitForSeconds(0.5f);
-                UnityEngine.SceneManagement.SceneManager.LoadScene("1_Menu_Principal");
+                UnityEngine.SceneManagement.SceneManager.LoadScene("0_Standby");
                 yield break;
             }
             yield return null;
@@ -464,6 +469,12 @@ public class ExperienciaController : MonoBehaviour
             }
         }
 
+        // Liberar camara antes de navegar a pantalla final
+        videoPlayer.Stop();
+        DetenerAudiosIdle();
+        var camara2 = FindAnyObjectByType<CameraCapture>();
+        if (camara2 != null) camara2.ForzarDetener();
+        yield return new WaitForSeconds(0.5f);
         UnityEngine.SceneManagement.SceneManager.LoadScene("6_Pantalla_Final");
     }
 
@@ -519,6 +530,12 @@ public class ExperienciaController : MonoBehaviour
                 MarcarObjetoUsado(i);
             }
         }
+        // Liberar camara antes de navegar a pantalla final
+        videoPlayer.Stop();
+        DetenerAudiosIdle();
+        var camara3 = FindAnyObjectByType<CameraCapture>();
+        if (camara3 != null) camara3.ForzarDetener();
+        yield return new WaitForSeconds(0.5f);
         UnityEngine.SceneManagement.SceneManager.LoadScene("6_Pantalla_Final");
     }
 }

@@ -22,8 +22,12 @@ public class PinzaDetector : MonoBehaviour
     [Header("Paneles")]
     public PanelOpcion[] paneles;
 
+    [Header("Timeout")]
+    public float timeoutPorInactividad = 30f;
+
     private float _tiempoPinza = 0f;
     private bool _seleccionHecha = false;
+    private float _tiempoSinMano = 0f;
     private ConcurrentQueue<HandLandmarkerResult> _cola = new ConcurrentQueue<HandLandmarkerResult>();
     private PanelOpcion _panelActual = null;
     private float _cursorX = 0f;
@@ -79,6 +83,23 @@ public class PinzaDetector : MonoBehaviour
                 cursorMano.localScale = Vector3.one * _escalaAnimacion;
         }
 
+        // Timeout por inactividad
+        if (!_manoDetectada && !_seleccionHecha)
+        {
+            _tiempoSinMano += Time.deltaTime;
+            if (_tiempoSinMano >= timeoutPorInactividad)
+            {
+                _seleccionHecha = true;
+                var runner = FindAnyObjectByType<Mediapipe.Unity.Sample.HandLandmarkDetection.HandLandmarkerRunner>();
+                if (runner != null) runner.Stop();
+                StartCoroutine(CargarEscenaConDelay("0_Standby"));
+            }
+        }
+        else
+        {
+            _tiempoSinMano = 0f;
+        }
+
         while (_cola.TryDequeue(out var resultado))
         {
             ProcesarResultado(resultado);
@@ -100,6 +121,7 @@ public class PinzaDetector : MonoBehaviour
         }
 
         _manoDetectada = true;
+        _tiempoSinMano = 0f;
         if (cursorMano != null) cursorMano.gameObject.SetActive(true);
 
         var landmarks = resultado.handLandmarks[0].landmarks;
