@@ -2,12 +2,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 
-/* CameraCapture: Es el encargado de acceder a la cámara web del computador, 
- capturar el video en tiempo real y mostrarlo en el RawImage que creaste en el Canvas. 
- Básicamente es el "ojo" de la experiencia. */
-
 public class CameraCapture : MonoBehaviour
 {
+    public static System.Action OnCamaraLista;
+
     [Header("Configuracion de Camara")]
     public RawImage displayImage;
     public int camaraIndex = 0;
@@ -27,18 +25,20 @@ public class CameraCapture : MonoBehaviour
     IEnumerator IniciarCamaraConDelay()
     {
         yield return new WaitForSeconds(0.5f);
-        
         WebCamDevice[] dispositivos = WebCamTexture.devices;
-        if (dispositivos.Length == 0) 
-        { 
-            Debug.LogError("No se encontro ninguna camara."); 
-            yield break; 
+        if (dispositivos.Length == 0)
+        {
+            Debug.LogError("No se encontro ninguna camara.");
+            yield break;
         }
         webCamTexture = new WebCamTexture(dispositivos[camaraIndex].name, ancho, alto, fps);
         displayImage.texture = webCamTexture;
         webCamTexture.Play();
         Debug.Log("Camara iniciada: " + dispositivos[camaraIndex].name);
+        yield return new WaitUntil(() => webCamTexture != null && webCamTexture.isPlaying && webCamTexture.width > 16);
+        OnCamaraLista?.Invoke();
     }
+
     void OnDestroy()
     {
         if (webCamTexture != null && webCamTexture.isPlaying)
@@ -46,7 +46,8 @@ public class CameraCapture : MonoBehaviour
             webCamTexture.Stop();
             webCamTexture = null;
         }
-    }    
+    }
+
     public void ForzarDetener()
     {
         if (webCamTexture != null && webCamTexture.isPlaying)

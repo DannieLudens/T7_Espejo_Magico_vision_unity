@@ -37,16 +37,20 @@ public void IrAlMenu()
         StartCoroutine(CargarMenu());
     }
 
-    System.Collections.IEnumerator CargarMenu()
+IEnumerator CargarMenu()
     {
         yield return new WaitForSeconds(0.5f);
-        UnityEngine.SceneManagement.SceneManager.LoadScene("1_Menu_Principal");
+        LoadingController.EscenaDestino = "1_Menu_Principal";
+        LoadingController.EsExperiencia = false;
+        SceneManager.LoadScene("2_Loading_Scene");
     }
 
 IEnumerator CargarStandby()
     {
         yield return new WaitForSeconds(0.5f);
-        SceneManager.LoadScene("0_Standby");
+        LoadingController.EscenaDestino = "0_Standby";
+        LoadingController.EsExperiencia = false;
+        SceneManager.LoadScene("2_Loading_Scene");
     }
 
 

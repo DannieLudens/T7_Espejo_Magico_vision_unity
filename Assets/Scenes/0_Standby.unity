@@ -1289,7 +1289,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StandbyController
   umbralPinza: 0.05
-  tiempoRequerido: 0.3
+  tiempoRequerido: 0.2
   escenaMenu: 1_Menu_Principal
 --- !u!4 &1346977197
 Transform:

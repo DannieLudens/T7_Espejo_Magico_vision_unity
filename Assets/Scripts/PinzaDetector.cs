@@ -211,9 +211,12 @@ public class PinzaDetector : MonoBehaviour
             panel.imagenPanel.color = panel.colorNormal;
     }
 
-    IEnumerator CargarEscenaConDelay(string escena)
+IEnumerator CargarEscenaConDelay(string escena)
     {
         yield return new WaitForSeconds(0.5f);
-        SceneManager.LoadScene(escena);
+        bool esExperiencia = escena.Contains("Experiencia");
+        LoadingController.EscenaDestino = escena;
+        LoadingController.EsExperiencia = esExperiencia;
+        SceneManager.LoadScene("2_Loading_Scene");
     }
 }

@@ -177,41 +177,34 @@ IEnumerator SecuenciaExperiencia()
                 BarraProgresoController.Instancia.SetCheckpointActivo(i == 0 ? 0 : (i * 2) - 1);
             _progresoBase = i * _progresoPorVideo;
             _actualizandoProgreso = true;
-
             if (i > 0) ActivarObjetoActual(i - 1);
-
             SetEstado1();
             ReproducirAudio(i);
             yield return StartCoroutine(ReproducirVideo(videosEducativos[i]));
-
             if (i < videosEducativos.Length - 1)
             {
                 SetEstado2();
                 _actualizandoProgreso = false;
-                if (sliderProgreso != null)
-                    sliderProgreso.value = (i + 1) * _progresoPorVideo;
-                if (BarraProgresoController.Instancia != null)
-                    BarraProgresoController.Instancia.SetCheckpointActivo(i * 2);
+                if (sliderProgreso != null) sliderProgreso.value = (i + 1) * _progresoPorVideo;
+                if (BarraProgresoController.Instancia != null) BarraProgresoController.Instancia.SetCheckpointActivo(i * 2);
                 ActivarObjetoActual(i);
                 _esperandoObjeto = true;
                 _deteccionActiva = false;
                 _tiempoSinInteraccion = 0f;
-
                 StartCoroutine(EsperarAudioYReproducirInstruccion());
-
                 yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
                 DetenerAudiosIdle();
                 MarcarObjetoUsado(i);
             }
         }
-
-        // Liberar camara antes de navegar a pantalla final
         videoPlayer.Stop();
         DetenerAudiosIdle();
         var camara = FindAnyObjectByType<CameraCapture>();
         if (camara != null) camara.ForzarDetener();
         yield return new WaitForSeconds(0.5f);
-        UnityEngine.SceneManagement.SceneManager.LoadScene("6_Pantalla_Final");
+        LoadingController.EscenaDestino = "6_Pantalla_Final";
+        LoadingController.EsExperiencia = false;
+        UnityEngine.SceneManagement.SceneManager.LoadScene("2_Loading_Scene");
     }
 
     IEnumerator ReproducirVideo(VideoClip clip)
@@ -286,10 +279,12 @@ IEnumerator SecuenciaExperiencia()
         StartCoroutine(CargarEscena("6_Pantalla_Final"));
     }
 
-    IEnumerator CargarEscena(string escena)
+IEnumerator CargarEscena(string escena)
     {
         yield return new WaitForSeconds(0.5f);
-        UnityEngine.SceneManagement.SceneManager.LoadScene(escena);
+        LoadingController.EscenaDestino = escena;
+        LoadingController.EsExperiencia = false;
+        UnityEngine.SceneManagement.SceneManager.LoadScene("2_Loading_Scene");
     }
 
     public void NotificarObjetoDetectado(string claseDetectada)
@@ -430,12 +425,11 @@ IEnumerator SecuenciaExperiencia()
         StartCoroutine(IniciarVideoDirecto(indice));
     }
 
-    IEnumerator IniciarVideoDirecto(int indice)
+IEnumerator IniciarVideoDirecto(int indice)
     {
         yield return new WaitForSeconds(0.5f);
         ReproducirAudio(indice);
         yield return StartCoroutine(ReproducirVideo(videosEducativos[indice]));
-
         if (indice < videosEducativos.Length - 1)
         {
             SetEstado2();
@@ -446,7 +440,6 @@ IEnumerator SecuenciaExperiencia()
             yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
             DetenerAudiosIdle();
             MarcarObjetoUsado(indice);
-
             for (int i = indice + 1; i < videosEducativos.Length; i++)
             {
                 _videoActual = i;
@@ -454,7 +447,6 @@ IEnumerator SecuenciaExperiencia()
                 SetEstado1();
                 ReproducirAudio(i);
                 yield return StartCoroutine(ReproducirVideo(videosEducativos[i]));
-
                 if (i < videosEducativos.Length - 1)
                 {
                     SetEstado2();
@@ -468,14 +460,14 @@ IEnumerator SecuenciaExperiencia()
                 }
             }
         }
-
-        // Liberar camara antes de navegar a pantalla final
         videoPlayer.Stop();
         DetenerAudiosIdle();
         var camara2 = FindAnyObjectByType<CameraCapture>();
         if (camara2 != null) camara2.ForzarDetener();
         yield return new WaitForSeconds(0.5f);
-        UnityEngine.SceneManagement.SceneManager.LoadScene("6_Pantalla_Final");
+        LoadingController.EscenaDestino = "6_Pantalla_Final";
+        LoadingController.EsExperiencia = false;
+        UnityEngine.SceneManagement.SceneManager.LoadScene("2_Loading_Scene");
     }
 
     public void SaltarAIdle(int indice)
@@ -499,7 +491,7 @@ IEnumerator SecuenciaExperiencia()
         StartCoroutine(IniciarIdleDirecto(indice));
     }
 
-    IEnumerator IniciarIdleDirecto(int indice)
+IEnumerator IniciarIdleDirecto(int indice)
     {
         yield return new WaitForSeconds(0.5f);
         _esperandoObjeto = true;
@@ -509,7 +501,6 @@ IEnumerator SecuenciaExperiencia()
         yield return StartCoroutine(ReproducirIdleEsperandoObjeto());
         DetenerAudiosIdle();
         MarcarObjetoUsado(indice);
-        
         for (int i = indice + 1; i < videosEducativos.Length; i++)
         {
             _videoActual = i;
@@ -517,7 +508,6 @@ IEnumerator SecuenciaExperiencia()
             SetEstado1();
             ReproducirAudio(i);
             yield return StartCoroutine(ReproducirVideo(videosEducativos[i]));
-            
             if (i < videosEducativos.Length - 1)
             {
                 SetEstado2();
@@ -530,12 +520,13 @@ IEnumerator SecuenciaExperiencia()
                 MarcarObjetoUsado(i);
             }
         }
-        // Liberar camara antes de navegar a pantalla final
         videoPlayer.Stop();
         DetenerAudiosIdle();
         var camara3 = FindAnyObjectByType<CameraCapture>();
         if (camara3 != null) camara3.ForzarDetener();
         yield return new WaitForSeconds(0.5f);
-        UnityEngine.SceneManagement.SceneManager.LoadScene("6_Pantalla_Final");
+        LoadingController.EscenaDestino = "6_Pantalla_Final";
+        LoadingController.EsExperiencia = false;
+        UnityEngine.SceneManagement.SceneManager.LoadScene("2_Loading_Scene");
     }
 }

@@ -72,15 +72,16 @@ public class ControlesOcultos : MonoBehaviour
         if (outline != null) outline.enabled = false;
     }
 
-    void Reiniciar()
+void Reiniciar()
     {
-        // Detener camara si existe en la escena
         var camara = FindAnyObjectByType<CameraCapture>();
         if (camara != null) camara.ForzarDetener();
-        StartCoroutine(CargarEscena("0_Standby"));
+        LoadingController.EscenaDestino = "0_Standby";
+        LoadingController.EsExperiencia = false;
+        StartCoroutine(CargarEscena("2_Loading_Scene"));
     }
 
-    void Cerrar()
+void Cerrar()
     {
         var camara = FindAnyObjectByType<CameraCapture>();
         if (camara != null) camara.ForzarDetener();
