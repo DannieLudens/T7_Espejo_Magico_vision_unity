@@ -1646,24 +1646,25 @@ MonoBehaviour:
   paneles:
   - rectTransform: {fileID: 1881810779}
     imagenPanel: {fileID: 883834978}
-    escenaDestino: Experiencia_Presentador_PlantillaBase
+    escenaDestino: 3_Pres_Noti_Mujer
     colorNormal: {r: 0.79607844, g: 0.79607844, b: 0.79607844, a: 1}
     colorHover: {r: 1, g: 1, b: 1, a: 1}
   - rectTransform: {fileID: 1687559568}
     imagenPanel: {fileID: 68638373}
-    escenaDestino: Experiencia_Presentador_PlantillaBase
+    escenaDestino: 5_Pres_ColModa_Mujer
     colorNormal: {r: 0.79607844, g: 0.79607844, b: 0.79607844, a: 1}
     colorHover: {r: 1, g: 1, b: 1, a: 1}
   - rectTransform: {fileID: 739996863}
     imagenPanel: {fileID: 861920565}
-    escenaDestino: Experiencia_Presentador_PlantillaBase
+    escenaDestino: 4_Pres_Noti_Hombre
     colorNormal: {r: 0.79607844, g: 0.79607844, b: 0.79607844, a: 1}
     colorHover: {r: 1, g: 1, b: 1, a: 1}
   - rectTransform: {fileID: 1400142075}
     imagenPanel: {fileID: 2073519971}
-    escenaDestino: Experiencia_Presentador_PlantillaBase
+    escenaDestino: 6_Pres_Deportes_Hombre
     colorNormal: {r: 0.79607844, g: 0.79607844, b: 0.79607844, a: 1}
     colorHover: {r: 1, g: 1, b: 1, a: 1}
+  timeoutPorInactividad: 30
 --- !u!1 &1148947746
 GameObject:
   m_ObjectHideFlags: 0

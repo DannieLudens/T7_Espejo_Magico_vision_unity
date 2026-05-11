@@ -15,10 +15,19 @@ EditorBuildSettings:
     path: Assets/Scenes/2_Loading_Scene.unity
     guid: 9362fcc32e1096f4f9a7ac13924e86ed
   - enabled: 1
-    path: Assets/Scenes/Experiencia_Presentador_PlantillaBase.unity
-    guid: 99c9720ab356a0642a771bea13969a05
+    path: Assets/Scenes/3_Pres_Noti_Mujer.unity
+    guid: 56d68cb2ab7739e4faf43da8f3aa04f8
   - enabled: 1
-    path: Assets/Scenes/6_Pantalla_Final.unity
+    path: Assets/Scenes/4_Pres_Noti_Hombre.unity
+    guid: e54fb4eb5a76fde459620006c6ca902d
+  - enabled: 1
+    path: Assets/Scenes/5_Pres_ColModa_Mujer.unity
+    guid: 05b021f3230740742a47741e00d64a91
+  - enabled: 1
+    path: Assets/Scenes/6_Pres_Deportes_Hombre.unity
+    guid: de22af43962427b4fb709d908ff064c3
+  - enabled: 1
+    path: Assets/Scenes/7_Pantalla_Final.unity
     guid: 1e77ffd431ee2d64891734dafe2e14c0
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}

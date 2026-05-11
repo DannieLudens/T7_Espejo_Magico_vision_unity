@@ -202,7 +202,7 @@ IEnumerator SecuenciaExperiencia()
         var camara = FindAnyObjectByType<CameraCapture>();
         if (camara != null) camara.ForzarDetener();
         yield return new WaitForSeconds(0.5f);
-        LoadingController.EscenaDestino = "6_Pantalla_Final";
+        LoadingController.EscenaDestino = "7_Pantalla_Final";
         LoadingController.EsExperiencia = false;
         UnityEngine.SceneManagement.SceneManager.LoadScene("2_Loading_Scene");
     }
@@ -219,15 +219,13 @@ IEnumerator SecuenciaExperiencia()
         yield return new WaitUntil(() => !videoPlayer.isPlaying);
     }
 
-    IEnumerator ReproducirIdleEsperandoObjeto()
+IEnumerator ReproducirIdleEsperandoObjeto()
     {
         videoPlayer.clip = videoIdle;
         videoPlayer.isLooping = true;
         videoPlayer.Play();
-
         yield return new WaitForSeconds(delayDeteccion);
         _deteccionActiva = true;
-
         while (_esperandoObjeto)
         {
             _tiempoSinInteraccion += Time.deltaTime;
@@ -238,12 +236,13 @@ IEnumerator SecuenciaExperiencia()
                 var camara = FindAnyObjectByType<CameraCapture>();
                 if (camara != null) camara.ForzarDetener();
                 yield return new WaitForSeconds(0.5f);
-                UnityEngine.SceneManagement.SceneManager.LoadScene("0_Standby");
+                LoadingController.EscenaDestino = "0_Standby";
+                LoadingController.EsExperiencia = false;
+                UnityEngine.SceneManagement.SceneManager.LoadScene("2_Loading_Scene");
                 yield break;
             }
             yield return null;
         }
-
         videoPlayer.isLooping = false;
     }
 
@@ -276,7 +275,7 @@ IEnumerator SecuenciaExperiencia()
         DetenerAudiosIdle();
         var camara = FindAnyObjectByType<CameraCapture>();
         if (camara != null) camara.ForzarDetener();
-        StartCoroutine(CargarEscena("6_Pantalla_Final"));
+        StartCoroutine(CargarEscena("7_Pantalla_Final"));
     }
 
 IEnumerator CargarEscena(string escena)
@@ -465,7 +464,7 @@ IEnumerator IniciarVideoDirecto(int indice)
         var camara2 = FindAnyObjectByType<CameraCapture>();
         if (camara2 != null) camara2.ForzarDetener();
         yield return new WaitForSeconds(0.5f);
-        LoadingController.EscenaDestino = "6_Pantalla_Final";
+        LoadingController.EscenaDestino = "7_Pantalla_Final";
         LoadingController.EsExperiencia = false;
         UnityEngine.SceneManagement.SceneManager.LoadScene("2_Loading_Scene");
     }
@@ -525,7 +524,7 @@ IEnumerator IniciarIdleDirecto(int indice)
         var camara3 = FindAnyObjectByType<CameraCapture>();
         if (camara3 != null) camara3.ForzarDetener();
         yield return new WaitForSeconds(0.5f);
-        LoadingController.EscenaDestino = "6_Pantalla_Final";
+        LoadingController.EscenaDestino = "7_Pantalla_Final";
         LoadingController.EsExperiencia = false;
         UnityEngine.SceneManagement.SceneManager.LoadScene("2_Loading_Scene");
     }

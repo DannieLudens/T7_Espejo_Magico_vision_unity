@@ -46,7 +46,7 @@ IEnumerator CargarEscena()
         yield return new WaitForSeconds(0.5f);
         _cargaAsincrona = SceneManager.LoadSceneAsync(EscenaDestino);
         _cargaAsincrona.allowSceneActivation = false;
-        float tiempoMinimo = 3f;
+        float tiempoMinimo = 2f;
         float tiempoTranscurrido = 0f;
         while (!_cargaAsincrona.isDone)
         {
