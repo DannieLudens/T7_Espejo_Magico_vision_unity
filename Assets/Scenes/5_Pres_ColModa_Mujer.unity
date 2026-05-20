@@ -2126,6 +2126,7 @@ MonoBehaviour:
   - {fileID: 2145983643}
   - {fileID: 1762155690}
   - {fileID: 1412512277}
+  - {fileID: 1564977942}
   colorActivo: {r: 1, g: 1, b: 1, a: 1}
   colorUsado: {r: 0.57861626, g: 0.57861626, b: 0.57861626, a: 0.5882353}
   colorPendiente: {r: 0.27044016, g: 0.27044016, b: 0.27044016, a: 1}
@@ -2134,6 +2135,7 @@ MonoBehaviour:
   - Polvo_Brocha
   - CajaDeMaquillaje
   - Labial
+  - Polvo_Brocha
   timeoutPorInactividad: 30
   delayDeteccion: 5
   intervaloAlaEspera: 10

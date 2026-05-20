@@ -79,8 +79,8 @@ public class StandbyController : MonoBehaviour
 System.Collections.IEnumerator Navegar()
     {
         yield return new WaitForSeconds(0.5f);
+        LoadingController.ModoLoading = LoadingController.ModoLoadingTipo.StandbyAMenu;
         LoadingController.EscenaDestino = escenaMenu;
-        LoadingController.EsExperiencia = false;
         SceneManager.LoadScene("2_Loading_Scene");
     }
 }

@@ -2091,7 +2091,7 @@ MonoBehaviour:
   audioInstruccion: {fileID: 8300000, guid: e5c820ee7c2ef354ca40f5ba1dc1c045, type: 3}
   audioAlaEspera: {fileID: 8300000, guid: e9ec616a26b251b4dac227e77c2d4b4c, type: 3}
   audioCorrecto: {fileID: 8300000, guid: 074cde735882d3b4e86ec8f5c3d6bbb3, type: 3}
-  audioIncorrecto: {fileID: 8300000, guid: 58408ccbceab6ad4e814117359614eb5, type: 3}
+  audioIncorrecto: {fileID: 8300000, guid: 0ec19f2820c192e448b5bd3955964ab2, type: 3}
   sliderProgreso: {fileID: 1780827075}
   curvaRespiracion:
     serializedVersion: 2

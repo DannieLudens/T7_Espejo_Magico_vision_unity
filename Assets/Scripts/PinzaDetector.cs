@@ -214,9 +214,11 @@ public class PinzaDetector : MonoBehaviour
 IEnumerator CargarEscenaConDelay(string escena)
     {
         yield return new WaitForSeconds(0.5f);
-        bool esExperiencia = escena.Contains("Experiencia");
+        bool esExperiencia = escena.Contains("Pres_") || escena.Contains("Experiencia");
+        LoadingController.ModoLoading = esExperiencia 
+            ? LoadingController.ModoLoadingTipo.MenuAExperiencia 
+            : LoadingController.ModoLoadingTipo.SoloBarras;
         LoadingController.EscenaDestino = escena;
-        LoadingController.EsExperiencia = esExperiencia;
         SceneManager.LoadScene("2_Loading_Scene");
     }
 }
