@@ -10,7 +10,8 @@ public class PhotoboothView : MonoBehaviour
 {
     [Header("Live view (#photobooth-canvas)")]
     [SerializeField] RawImage liveView;            // mirrored webcam
-    [SerializeField] RawImage makeupView;          // #photobooth-makeup-canvas (face filter, pending)
+    [SerializeField] RawImage makeupView;          // #photobooth-makeup-canvas (face filter overlay)
+    [SerializeField] MakeupFilter makeup;          // face-filter.js fallback (Snap Camera Kit is web only)
 
     [Header("UI (#photobooth-ui)")]
     [SerializeField] CanvasGroup hint;             // #photobooth-hint (hintBlink)
@@ -64,7 +65,7 @@ public class PhotoboothView : MonoBehaviour
     public void Enter()
     {
         AttachCamera();                                            // drawImage(webcam)
-        makeupView.enabled = false;                                // face filter comes in a later step
+        StartMakeup();                                             // initFaceFilter + setMakeupPreset
 
         takeButton.gameObject.SetActive(true);                     // classList.remove('hidden')
         hint.gameObject.SetActive(true);
@@ -87,12 +88,25 @@ public class PhotoboothView : MonoBehaviour
         liveView.uvRect = new Rect(1f, 0f, -1f, 1f);                 // ctx.scale(-1, 1)
     }
 
+    // Starts the face filter for the active presenter and shows its overlay (already in mirror view, so no flip).
+    void StartMakeup()
+    {
+        var camera = HandTrackingService.GetCameraTexture();                   // overlay matches the video size
+        int w = camera != null ? camera.width : 1280, h = camera != null ? camera.height : 720; // || 1280 x 720
+        var presenter = AppSession.ActivePresenter;                            // _activePresenter.id
+        makeup.Begin(presenter != null ? presenter.id : null, w, h);           // Face Mesh + preset
+        makeupView.texture = makeup.Overlay;                                   // #photobooth-makeup-canvas
+        makeupView.uvRect = new Rect(0f, 0f, 1f, 1f);                          // landmarks are mirror view already
+        makeupView.enabled = true;
+    }
+
     // Stops a running countdown and releases the camera (web _onLeaveStateFinal).
     public void Exit()
     {
         if (_captureRoutine != null) { StopCoroutine(_captureRoutine); _captureRoutine = null; } // abort countdown
         _capturing = false;                         // allow a new capture next time
         liveView.texture = null;                    // stop drawing the webcam
+        makeup.End();                               // stopFaceFilter()
     }
 
     // ── Hand and mouse input ─────────────────────────────────
