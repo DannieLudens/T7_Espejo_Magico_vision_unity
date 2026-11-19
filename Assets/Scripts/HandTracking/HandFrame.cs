@@ -1,7 +1,8 @@
 using UnityEngine; // Vector3
 
 // One hand-tracking sample, shared by every provider (native plugin or browser JS).
-// Landmarks use MediaPipe's normalized image space: x,y in [0,1], origin at the top-left.
+// Landmarks are normalized x,y in [0,1], origin at the top-left, already in mirror view
+// (moving the hand to the user's right increases x). Each provider applies its own flip.
 public readonly struct HandFrame
 {
     public const int LandmarkCount = 21; // MediaPipe hand model returns 21 landmarks

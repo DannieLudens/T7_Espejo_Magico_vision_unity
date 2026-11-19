@@ -32,7 +32,7 @@ public static class MediaPipeNativeHandBridge
 
         var points = new Vector3[HandFrame.LandmarkCount];           // fresh array, listeners may keep it
         for (int i = 0; i < points.Length; i++)                      // copy every landmark
-            points[i] = new Vector3(source[i].x, source[i].y, source[i].z); // keep MediaPipe normalized space
+            points[i] = new Vector3(source[i].x, source[i].y, source[i].z); // the plugin's WebCamSource already delivers a mirrored image
 
         HandTrackingService.Publish(new HandFrame(points));          // send to gameplay scripts
     }

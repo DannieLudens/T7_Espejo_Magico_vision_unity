@@ -9,7 +9,6 @@ public class HandGestures : MonoBehaviour
     [SerializeField] float pinchThreshold = 0.07f;            // thumb-index normalized distance (web PINCH_THRESHOLD)
     [SerializeField] float pinchHoldSeconds = 1.5f;           // hold time to confirm (web PINCH_HOLD_MS)
     [SerializeField, Range(0f, 1f)] float smoothing = 0.18f;  // lerp per frame (web LERP_ALPHA)
-    [SerializeField] bool mirrorX = true;                     // web flips X so the cursor moves like a mirror
 
     public static event Action<Vector2> HandMoved;            // smoothed index fingertip position
     public static event Action HandLost;                      // hand left the camera
@@ -17,9 +16,11 @@ public class HandGestures : MonoBehaviour
     public static event Action<Vector2, float> PinchProgress; // pinch held, progress 0..1
     public static event Action<Vector2> PinchConfirmed;       // pinch held long enough
     public static event Action PinchEnded;                    // pinch released before confirming
+    public static event Action<HandFrame, float, bool> FrameProcessed; // raw frame, pinch distance, pinched (debug overlay)
 
     public static bool HandVisible { get; private set; }      // true while a hand is tracked
     public static Vector2 Position { get; private set; }      // last smoothed fingertip position
+    public static float PinchThreshold { get; private set; } = 0.07f; // current threshold, shown by the debug overlay
 
     readonly ConcurrentQueue<HandFrame> _frames = new ConcurrentQueue<HandFrame>(); // provider thread -> main thread
     Vector2 _smooth = new Vector2(-200f, -200f);              // web starts the cursor off-screen
@@ -29,6 +30,7 @@ public class HandGestures : MonoBehaviour
     // Starts listening to the active hand tracking provider.
     void OnEnable()
     {
+        PinchThreshold = pinchThreshold;              // publish the inspector value
         HandTrackingService.FrameReceived += Enqueue; // frames may arrive on a worker thread
     }
 
@@ -55,6 +57,7 @@ public class HandGestures : MonoBehaviour
     {
         if (!frame.HasHand) // no hand in this result
         {
+            FrameProcessed?.Invoke(frame, 0f, false); // debug canvas is cleared on every empty result
             if (!HandVisible) return; // already reported
             HandVisible = false;      // hand gone
             ResetPinch();             // cancel any pinch in progress
@@ -65,14 +68,15 @@ public class HandGestures : MonoBehaviour
         HandVisible = true;                                       // a hand is in the frame
         var index = frame.Landmarks[HandFrame.IndexTip];          // index fingertip (landmark 8)
         var thumb = frame.Landmarks[HandFrame.ThumbTip];          // thumb tip (landmark 4)
-        float x = mirrorX ? 1f - index.x : index.x;               // mirror like the web webcam view
-        var raw = new Vector2(x * Screen.width, (1f - index.y) * Screen.height); // image top-left -> screen bottom-left
+        var raw = new Vector2(index.x * Screen.width, (1f - index.y) * Screen.height); // mirror-view top-left -> screen bottom-left
         _smooth = Vector2.Lerp(_smooth, raw, smoothing);          // web _lerp(_smoothX, rawX, LERP_ALPHA)
         Position = _smooth;                                       // expose for late subscribers
         HandMoved?.Invoke(_smooth);                               // web 'handMove'
 
         float distance = Vector2.Distance(new Vector2(thumb.x, thumb.y), new Vector2(index.x, index.y)); // pinch gap in image space
-        UpdatePinch(distance < pinchThreshold);                   // web _updatePinch
+        bool pinched = distance < pinchThreshold;                 // fingers closed
+        UpdatePinch(pinched);                                     // web _updatePinch
+        FrameProcessed?.Invoke(frame, distance, pinched);         // web _drawDebug
     }
 
     // Pinch hold state machine (web _updatePinch).
