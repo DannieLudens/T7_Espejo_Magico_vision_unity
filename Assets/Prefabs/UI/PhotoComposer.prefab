@@ -916,6 +916,7 @@ MonoBehaviour:
   canvas: {fileID: 871930817559208174}
   cameraImage: {fileID: 9032281668094381698}
   makeupImage: {fileID: 8232617081194415336}
+  logo: {fileID: 7954945729237468094}
 --- !u!1 &4503671156229886073
 GameObject:
   m_ObjectHideFlags: 0

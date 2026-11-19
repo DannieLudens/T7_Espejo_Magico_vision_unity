@@ -15,6 +15,7 @@ public class FinalButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     [SerializeField] Image barFill;          // bar gradient
     [SerializeField] Image barGlow;          // bar box-shadow: 0 0 6px var(--gold)
     [SerializeField] bool secondary;         // .final-btn.secondary (dimmer border and label)
+    [SerializeField] float nearShift = 4f;   // .finger-near translateX: 4px in the result mode, 6px in the photo mode
 
     public bool HandHover { get; set; }      // .hovered set by the hand cursor
     public bool Near { get; set; }           // .finger-near (fingertip within 65 px of the center)
@@ -102,7 +103,7 @@ public class FinalButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         selectingShadow.color = WithAlpha(AppTheme.Gold, !Near && Selecting ? 0.35f : 0f);        // 0 0 20px
 
         // transform: .finger-near translateX(±4px) scale(1.12) > .hovered translateX(±6px) scale(1.06)
-        float shift = Near ? 4f * AlignSign : hover ? 6f * (AlignSign == 0 ? 1 : AlignSign) : 0f; // centered hover keeps +6px
+        float shift = Near ? nearShift * AlignSign : hover ? 6f * (AlignSign == 0 ? 1 : AlignSign) : 0f; // centered hover keeps +6px
         _shift.SetTarget(shift, now);
         _scale.SetTarget(Near ? 1.12f : hover ? 1.06f : 1f, now);
         float s = _scale.Evaluate(now);

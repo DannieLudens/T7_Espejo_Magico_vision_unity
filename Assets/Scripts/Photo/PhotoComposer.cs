@@ -14,6 +14,7 @@ public class PhotoComposer : MonoBehaviour
     [SerializeField] Canvas canvas;               // composition canvas (Screen Space - Camera)
     [SerializeField] RawImage cameraImage;        // webcam, mirrored (ctx.scale(-1, 1))
     [SerializeField] RawImage makeupImage;        // makeup overlay (face filter), hidden when absent
+    [SerializeField] GameObject logo;             // Telemedellín watermark (APP_CONFIG.photobooth.watermarkLogo)
 
     public static PhotoComposer Instance { get; private set; } // single composer in Main.unity
 
@@ -41,6 +42,7 @@ public class PhotoComposer : MonoBehaviour
         cameraImage.uvRect = new Rect(1f, 0f, -1f, 1f);        // horizontal mirror, full frame stretched to 16:9
         makeupImage.texture = makeup;                          // overlay canvas
         makeupImage.enabled = makeup != null;                  // drawn only when present
+        if (logo != null) logo.SetActive(AppConfig.Current.photobooth.watermarkLogo); // optional watermark
 
         canvas.gameObject.SetActive(true);                     // build the UI for this frame
         _camera.enabled = true;                                // render once into the target

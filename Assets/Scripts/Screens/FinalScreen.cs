@@ -10,8 +10,8 @@ public class FinalScreen : ScreenController
     [SerializeField] GameObject resultMode;       // #final-result-mode
     [SerializeField] GameObject photoboothMode;   // #final-photobooth-mode
     [SerializeField] PhotoboothView photobooth;   // camera, 📷 button and countdown
-    [SerializeField] GameObject photoMode;        // #final-photo-mode (QR pending)
-    [SerializeField] RawImage photoPreview;       // #captured-photo-img
+    [SerializeField] GameObject photoMode;        // #final-photo-mode
+    [SerializeField] PhotoResultView photoResult; // photo, QR and its two buttons
 
     [Header("Result mode")]
     [SerializeField] Image presenterImage;        // #final-presenter-img (object-fit: contain)
@@ -40,7 +40,7 @@ public class FinalScreen : ScreenController
         photoMode.SetActive(state == AppState.PhotoResult);      // _showFinalMode('photo')
         if (state == AppState.Final) SetupResult();              // _setupFinal
         if (state == AppState.Photobooth) photobooth.Enter();    // _enterPhotoBooth
-        if (state == AppState.PhotoResult) ShowPhoto();          // _showPhotoResult
+        if (state == AppState.PhotoResult) photoResult.Show(AppSession.LastPhoto); // _showPhotoResult
     }
 
     // Leaving any sub-mode stops the hand states of the buttons and the photobooth camera.
@@ -51,11 +51,22 @@ public class FinalScreen : ScreenController
         if (state == AppState.Photobooth) photobooth.Exit(); // stopPhotoBooth / pause filters
     }
 
-    // Shows the captured photo (the QR and its buttons come in the next step).
-    void ShowPhoto()
+    // "📸 Tomar otra": back to the photobooth without fading (web _enterPhotoBooth from the photo mode).
+    void OnRetake()
     {
-        photoPreview.texture = AppSession.LastPhoto;          // img.src = dataURL
-        photoPreview.enabled = AppSession.LastPhoto != null;  // nothing captured
+        if (Machine.Current == AppState.PhotoResult) Machine.TransitionTo(AppState.Photobooth); // sub-mode switch
+    }
+
+    // "↩ Volver al inicio" from the photo mode.
+    void OnPhotoMenu()
+    {
+        if (Machine.Current == AppState.PhotoResult) Machine.TransitionTo(AppState.Menu); // _transitionTo(MENU)
+    }
+
+    // qrDisplayMs elapsed with the QR on screen: back to the tutorial, which leads to standby.
+    void OnPhotoTimedOut()
+    {
+        if (Machine.Current == AppState.PhotoResult) StartCoroutine(TransitionWhenIdle(AppState.Tutorial)); // _transitionTo(TUTORIAL)
     }
 
     // Photo captured: keep it for the result mode and switch to it.
@@ -154,6 +165,9 @@ public class FinalScreen : ScreenController
         HandGestures.PinchEnded += OnPinchEnded; // extra hook for this screen
         photobooth.PhotoTaken += OnPhotoTaken;   // capture finished
         photobooth.BackRequested += OnPhotoboothBack; // "← Volver"
+        photoResult.RetakeRequested += OnRetake;      // "📸 Tomar otra"
+        photoResult.MenuRequested += OnPhotoMenu;     // "↩ Volver al inicio"
+        photoResult.TimedOut += OnPhotoTimedOut;      // qrDisplayMs
     }
 
     // Removes the extra hook.
@@ -163,6 +177,9 @@ public class FinalScreen : ScreenController
         HandGestures.PinchEnded -= OnPinchEnded; // stop listening
         photobooth.PhotoTaken -= OnPhotoTaken;   // stop listening
         photobooth.BackRequested -= OnPhotoboothBack;
+        photoResult.RetakeRequested -= OnRetake;
+        photoResult.MenuRequested -= OnPhotoMenu;
+        photoResult.TimedOut -= OnPhotoTimedOut;
     }
 
     // Hover follows the fingertip (web _onFinalHandMove / _onPhotoBoothHandMove).
@@ -199,6 +216,7 @@ public class FinalScreen : ScreenController
     protected override void OnPinchConfirmed(Vector2 screenPosition)
     {
         if (Machine.Current == AppState.Photobooth) { photobooth.PinchConfirmed(screenPosition); return; } // back or 📷
+        if (Machine.Current == AppState.PhotoResult) { photoResult.PinchConfirmed(screenPosition); return; } // retake or menu
         if (Machine.Current != AppState.Final) return; // result mode only
         var hit = ButtonAt(screenPosition);           // button under the pinch
         if (hit == makeupButton) OnMakeupClicked();    // data-action="makeup"

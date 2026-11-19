@@ -1,0 +1,16 @@
+{
+  "cloudinary": {
+    "enabled": true,
+    "cloudName": "TU_CLOUD_NAME",
+    "uploadPreset": "TU_UPLOAD_PRESET"
+  },
+  "photobooth": {
+    "countdownSeconds": 3,
+    "photoWidth": 1280,
+    "photoHeight": 720,
+    "jpegQuality": 0.92,
+    "watermarkLogo": true,
+    "qrDisplayMs": 90000,
+    "kioskUrl": ""
+  }
+}

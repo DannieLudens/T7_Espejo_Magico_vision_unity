@@ -150,7 +150,8 @@ public class PhotoboothView : MonoBehaviour
     IEnumerator CaptureRoutine()
     {
         countdown.gameObject.SetActive(true);                                 // display.classList.remove('hidden')
-        for (int count = countdownSeconds; count > 0; count--)                // tick()
+        int seconds = AppConfig.Loaded ? AppConfig.Current.photobooth.countdownSeconds : countdownSeconds; // APP_CONFIG value
+        for (int count = seconds; count > 0; count--)                         // tick()
         {
             Pop(count.ToString());                                            // textContent + countdown-pop
             if (MirrorFrame.Instance != null) MirrorFrame.Instance.TriggerCountdownBlink(); // uniform blink

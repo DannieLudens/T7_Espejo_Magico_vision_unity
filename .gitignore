@@ -45,3 +45,6 @@ venv/
 *.pt
 *.avi
 best.onnx
+# Runtime secrets (like js/config.js in the web version): copy config.example.json
+Assets/StreamingAssets/config.json
+Assets/StreamingAssets/config.json.meta
