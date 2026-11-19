@@ -1,0 +1,72 @@
+using UnityEngine;    // MonoBehaviour, RectTransform
+using UnityEngine.UI; // Image
+
+// Puts a generated shape on this Image so prefabs can use CSS-like circles, glows, rings and pills.
+[ExecuteAlways, RequireComponent(typeof(Image))]
+public class ShapeImage : MonoBehaviour
+{
+    public enum Shape { Disc, Glow, Ring, Pill, PillOutline } // supported CSS look-alikes
+
+    [SerializeField] Shape shape = Shape.Disc;     // which shape to draw
+    [SerializeField] int resolution = 64;          // texture size in pixels
+    [SerializeField] float ringRadius = 22f;       // Ring: SVG circle r (in texture pixels)
+    [SerializeField] float ringThickness = 3f;     // Ring: stroke width; PillOutline: border width
+
+    Image _image; // cached target
+
+    // Applies the shape when enabled (also in edit mode thanks to ExecuteAlways).
+    void OnEnable()
+    {
+        Apply(); // assign sprite and image settings
+    }
+
+    // Keeps pill corners round when the element is resized.
+    void OnRectTransformDimensionsChange()
+    {
+        if (_image != null) FitPillCorners(); // only matters for sliced pills
+    }
+
+#if UNITY_EDITOR
+    // Re-applies after inspector edits.
+    void OnValidate()
+    {
+        if (isActiveAndEnabled) Apply(); // live preview in the editor
+    }
+#endif
+
+    // Assigns the generated sprite and the matching Image type.
+    void Apply()
+    {
+        _image = GetComponent<Image>(); // target graphic
+        switch (shape)
+        {
+            case Shape.Disc:
+                _image.sprite = ProceduralSprites.Disc(resolution);                         // solid circle (Image type left as set, e.g. Filled)
+                break;
+            case Shape.Glow:
+                _image.sprite = ProceduralSprites.Glow(resolution);                         // soft halo
+                break;
+            case Shape.Ring:
+                _image.sprite = ProceduralSprites.Ring(resolution, ringRadius, ringThickness); // SVG-like ring (Filled works for progress)
+                break;
+            case Shape.Pill:
+                _image.sprite = ProceduralSprites.Disc(resolution);                         // disc sliced into a capsule
+                _image.type = Image.Type.Sliced;                                            // stretch the middle
+                break;
+            case Shape.PillOutline:
+                _image.sprite = ProceduralSprites.Ring(resolution, resolution * 0.5f - ringThickness * 0.5f - 0.5f, ringThickness); // edge ring
+                _image.type = Image.Type.Sliced;                                            // stretch the middle
+                break;
+        }
+        FitPillCorners(); // radius = half height
+    }
+
+    // Scales the 9-slice border so the corner radius equals half of the element height.
+    void FitPillCorners()
+    {
+        if (shape != Shape.Pill && shape != Shape.PillOutline) return; // only pills are sliced
+        float height = ((RectTransform)transform).rect.height;        // current UI height
+        if (height <= 0f) return;                                      // layout not ready yet
+        _image.pixelsPerUnitMultiplier = resolution / height;          // border px = (res/2) / multiplier = height/2
+    }
+}

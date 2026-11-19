@@ -2,11 +2,13 @@ using System.Collections; // IEnumerator
 using UnityEngine;        // MonoBehaviour, CanvasGroup, Mathf, Time
 
 // Full-screen black overlay used to fade between screens (web: #scene-overlay).
+// CSS animates opacity over 0.35s with "ease"; app.js waits 380 ms (out) and 400 ms (in) before continuing.
 [RequireComponent(typeof(CanvasGroup))]
 public class ScreenFader : MonoBehaviour
 {
-    [SerializeField] float fadeOutSeconds = 0.38f; // time to reach full black (web: 380 ms)
-    [SerializeField] float fadeInSeconds = 0.40f;  // time to clear the black (web: 400 ms)
+    [SerializeField] float transitionSeconds = 0.35f; // CSS transition: opacity 0.35s
+    [SerializeField] float fadeOutWait = 0.38f;       // _fadeOut resolves after 380 ms
+    [SerializeField] float fadeInWait = 0.40f;        // _fadeIn resolves after 400 ms
 
     CanvasGroup _group; // overlay opacity and input blocking
 
@@ -20,22 +22,23 @@ public class ScreenFader : MonoBehaviour
     // Fades the overlay to black.
     public IEnumerator FadeOut()
     {
-        return Fade(0f, 1f, fadeOutSeconds); // screen goes black
+        return Fade(0f, 1f, fadeOutWait); // screen goes black
     }
 
     // Fades the overlay back to transparent.
     public IEnumerator FadeIn()
     {
-        return Fade(1f, 0f, fadeInSeconds); // new screen becomes visible
+        return Fade(1f, 0f, fadeInWait); // new screen becomes visible
     }
 
-    // Animates alpha between two values with an ease curve, ignoring time scale.
-    IEnumerator Fade(float from, float to, float seconds)
+    // Animates alpha with the CSS "ease" curve, then waits until the JS timeout would resolve.
+    IEnumerator Fade(float from, float to, float totalWait)
     {
-        for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime) // advance every frame
+        for (float t = 0f; t < totalWait; t += Time.unscaledDeltaTime) // run until the JS promise resolves
         {
-            SetAlpha(Mathf.Lerp(from, to, Mathf.SmoothStep(0f, 1f, t / seconds))); // CSS "ease"-like curve
-            yield return null;                                                   // wait one frame
+            float k = Mathf.Clamp01(t / transitionSeconds);              // CSS transition progress
+            SetAlpha(Mathf.Lerp(from, to, CssEasing.Ease(k)));           // same curve as the browser
+            yield return null;                                           // wait one frame
         }
         SetAlpha(to); // land exactly on the target
     }

@@ -1,0 +1,3 @@
+emoji_u1f44c_ok_hand.png
+Rendered from Noto Color Emoji (Google), U+1F44C "OK hand".
+Font license: SIL Open Font License 1.1 - https://github.com/googlefonts/noto-emoji
