@@ -1,0 +1,5 @@
+Fonts in this folder:
+  Quicksand (Regular, Medium, Bold) - Andrew Paglinawan, https://github.com/andrew-paglinawan/QuicksandFamily
+  Inconsolata Regular - Raph Levien et al., https://github.com/googlefonts/Inconsolata
+    (stands in for the browser "monospace" font used by the web operator panels)
+License: SIL Open Font License 1.1 - https://openfontlicense.org

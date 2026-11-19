@@ -62,6 +62,7 @@ GameObject:
   - component: {fileID: 5901954703530127427}
   - component: {fileID: 891223334897805069}
   - component: {fileID: 5011481455385809205}
+  - component: {fileID: 3669465578265420528}
   m_Layer: 0
   m_Name: Screen_Intro
   m_TagString: Untagged
@@ -246,6 +247,19 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &3669465578265420528
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1481008452288819960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0aa09ffdc3b898a45835f6eb40c8b1c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChannelVolume
+  channel: 1
 --- !u!1 &3583691079097540857
 GameObject:
   m_ObjectHideFlags: 0

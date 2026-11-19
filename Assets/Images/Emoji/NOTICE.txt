@@ -6,6 +6,17 @@ Emoji images rendered from Noto Color Emoji (Google):
   emoji_u2728_sparkles.png       U+2728  "sparkles"
   emoji_u1f4f1_mobile_phone.png  U+1F4F1 "mobile phone"
   emoji_u23f3_hourglass_flowing.png U+23F3 "hourglass with flowing sand"
-Glyph rendered from Noto Sans Math (Google):
+  emoji_u1f50a_speaker_high.png  U+1F50A "speaker high volume"
+  emoji_u1f507_speaker_muted.png U+1F507 "muted speaker"
+  emoji_u1f39b_control_knobs.png U+1F39B "control knobs"
+  emoji_u1f399_studio_microphone.png U+1F399 "studio microphone"
+  emoji_u1f3ac_clapper_board.png U+1F3AC "clapper board"
+  emoji_u1f3b5_musical_note.png  U+1F3B5 "musical note"
+  emoji_u1f4be_floppy_disk.png   U+1F4BE "floppy disk"
+  emoji_u2705_check_mark_button.png U+2705 "check mark button"
+  emoji_u2699_gear.png           U+2699  "gear"
+  emoji_u1fa9e_mirror.png        U+1FA9E "mirror"
+Glyphs rendered from Noto Sans Math (Google):
   glyph_u21a9_return_arrow.png   U+21A9  "leftwards arrow with hook"
+  glyph_u21ba_anticlockwise_arrow.png U+21BA "anticlockwise open circle arrow"
 Font license: SIL Open Font License 1.1 - https://github.com/googlefonts/noto-emoji , https://github.com/notofonts/math

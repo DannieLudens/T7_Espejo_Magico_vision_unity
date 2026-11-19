@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8498011295435174307}
   - component: {fileID: 2896068757970512283}
   - component: {fileID: 3773071175591208357}
+  - component: {fileID: 1936099171983975908}
   m_Layer: 0
   m_Name: Screen_Outro
   m_TagString: Untagged
@@ -193,6 +194,19 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1936099171983975908
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 192819345200403878}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0aa09ffdc3b898a45835f6eb40c8b1c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChannelVolume
+  channel: 1
 --- !u!1001 &4514479166291980154
 PrefabInstance:
   m_ObjectHideFlags: 0

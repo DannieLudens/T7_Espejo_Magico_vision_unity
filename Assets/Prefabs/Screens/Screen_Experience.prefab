@@ -181,6 +181,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!114 &9058950128309100445
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -438,6 +439,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!114 &5496982110883424255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -551,6 +553,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!1 &1256344021280695580
 GameObject:
   m_ObjectHideFlags: 0
@@ -977,6 +980,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 2
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!1 &2104857694719591774
 GameObject:
   m_ObjectHideFlags: 0
@@ -991,6 +995,7 @@ GameObject:
   - component: {fileID: 2038126769679144344}
   - component: {fileID: 3960202056952152616}
   - component: {fileID: 8625958243507139169}
+  - component: {fileID: 2303505908370079396}
   m_Layer: 0
   m_Name: Screen_Experience
   m_TagString: Untagged
@@ -1292,6 +1297,19 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &2303505908370079396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2104857694719591774}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0aa09ffdc3b898a45835f6eb40c8b1c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChannelVolume
+  channel: 1
 --- !u!1 &2358187796751109076
 GameObject:
   m_ObjectHideFlags: 0
@@ -1385,6 +1403,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 2
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!1 &2468230253151093810
 GameObject:
   m_ObjectHideFlags: 0
@@ -1628,6 +1647,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!1 &3198856859900902401
 GameObject:
   m_ObjectHideFlags: 0
@@ -1911,6 +1931,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!114 &1909392661540456554
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2236,6 +2257,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!1 &4714179880408517994
 GameObject:
   m_ObjectHideFlags: 0
@@ -3004,6 +3026,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VideoSurface
   image: {fileID: 1712343656779715245}
   fitter: {fileID: 259668353716379312}
+  playAudio: 0
 --- !u!1 &6826102945397571452
 GameObject:
   m_ObjectHideFlags: 0
@@ -3172,6 +3195,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!1 &7510656241153099479
 GameObject:
   m_ObjectHideFlags: 0
@@ -3266,6 +3290,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 16
+  shadowBlur: 20
 --- !u!114 &3847277452883156934
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3425,6 +3450,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VideoSurface
   image: {fileID: 8488582212644790167}
   fitter: {fileID: 1175218547317421822}
+  playAudio: 1
 --- !u!1 &7883512710490398665
 GameObject:
   m_ObjectHideFlags: 0
@@ -3556,6 +3582,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!1 &8028063989858924796
 GameObject:
   m_ObjectHideFlags: 0
@@ -3651,6 +3678,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!114 &808784570300908922
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4193,6 +4221,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 16
+  shadowBlur: 20
 --- !u!114 &7145355098825021125
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4306,6 +4335,7 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 10
+  shadowBlur: 20
 --- !u!1 &9158945245224227785
 GameObject:
   m_ObjectHideFlags: 0
@@ -4399,3 +4429,4 @@ MonoBehaviour:
   ringRadius: 22
   ringThickness: 1
   cornerRadius: 10
+  shadowBlur: 20

@@ -144,6 +144,7 @@ public class MenuScreen : ScreenController
             AppSession.MenuInstructionPlayed = true;   // only once per session
             voice.clip = instructionClip;              // new Audio(...)
             voice.Play();                              // play()
+            Captions.Attach(voice, instructionClip);   // attachCaptions (never detached when leaving, like the web)
         }
         menuBackgroundGroup.alpha = _backgroundOpacity.Evaluate(Time.unscaledTime); // #menu-bg opacity
     }

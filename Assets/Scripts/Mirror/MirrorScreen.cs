@@ -11,6 +11,7 @@ public class MirrorScreen : ScreenController
     [SerializeField] MagicMirror mirror;         // water ripple renderer
     [SerializeField] MirrorCountdown countdown;  // ring in the bottom-left corner
     [SerializeField] VanityCredits credits;      // bottom strip credits with "Tour Telemedellín"
+    [SerializeField] OperatorPanel ripplePanel;  // #mirror-config (key C)
 
     int _seconds;              // _mirrorCdSecs
     float _nextTick;           // next setInterval tick (keeps its phase when the count is reset)
@@ -40,6 +41,12 @@ public class MirrorScreen : ScreenController
         mirror.End();                         // stopMagicMirror
         credits.Hide();                       // remove mirror-mode
         if (HandCursor.Instance != null) HandCursor.Instance.SetSuppressed(false); // cursors back
+    }
+
+    // Opens or closes the ripple settings (web _toggleMirrorConfig); it stays open across visits.
+    public void ToggleConfig()
+    {
+        ripplePanel.Toggle(); // classList.toggle('hidden')
     }
 
     // A moving hand ripples the water, restarts the countdown and arms the activation timer.

@@ -5,7 +5,7 @@ using UnityEngine.UI; // Image
 [ExecuteAlways, RequireComponent(typeof(Image))]
 public class ShapeImage : MonoBehaviour
 {
-    public enum Shape { Disc, Glow, Ring, Pill, PillOutline, RoundedRect, RoundedRectOutline, RoundedRectShadow } // supported CSS look-alikes
+    public enum Shape { Disc, Glow, Ring, Pill, PillOutline, RoundedRect, RoundedRectOutline, RoundedRectShadow, RoundedRectBlur } // supported CSS look-alikes
 
     [SerializeField] Shape shape = Shape.Disc;     // which shape to draw
     [SerializeField] int resolution = 64;          // texture size in pixels
@@ -68,6 +68,11 @@ public class ShapeImage : MonoBehaviour
                 _image.sprite = ProceduralSprites.RoundedRectOutline(cornerRadius, ringThickness); // fixed-radius border
                 _image.type = Image.Type.Sliced;                                            // stretch the middle
                 _image.pixelsPerUnitMultiplier = 1f;                                        // radius in UI pixels
+                break;
+            case Shape.RoundedRectBlur:
+                _image.sprite = ProceduralSprites.RoundedRectShadow(cornerRadius, shadowBlur, false); // blurred box, not clipped
+                _image.type = Image.Type.Sliced;                                            // stretch the middle
+                _image.pixelsPerUnitMultiplier = 1f;                                        // blur in UI pixels
                 break;
             case Shape.RoundedRectShadow:
                 _image.sprite = ProceduralSprites.RoundedRectShadow(cornerRadius, shadowBlur); // blurred halo (rect padded by blur)

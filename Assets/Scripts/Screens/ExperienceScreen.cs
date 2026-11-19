@@ -169,6 +169,7 @@ public class ExperienceScreen : ScreenController
             return;
         }
         _audioEnded = true;                            // _sceneAudioEnded
+        Captions.Detach();                             // detachCaptions() after the last track
         if (_videoEnded && _bridging)                  // stop the bridge loop before advancing
         {
             _bridging = false;
@@ -335,6 +336,7 @@ public class ExperienceScreen : ScreenController
         ObjectRecognizer.Instance?.End();                                   // stopDetecting()
         mainVideo.Stop();                                                   // videoEl.pause(); src = ''
         StopVoice();                                                        // audioEl.pause()
+        Captions.Detach();                                                  // detachCaptions()
         _videoEnded = _audioEnded = false;                                  // reset flags
         _bridging = false;                                                  // no bridge
         _fadeAlpha.Snap(0f);                                                // fade removed

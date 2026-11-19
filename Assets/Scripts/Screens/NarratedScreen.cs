@@ -33,6 +33,7 @@ public class NarratedScreen : ScreenController, IPointerClickHandler
     {
         _audioAt = -1f;  // clearTimeout
         _track?.Stop();  // audioEl.pause(); src = ''
+        Captions.Detach(); // detachCaptions()
     }
 
     // Clip to narrate in this visit; subclasses override it.

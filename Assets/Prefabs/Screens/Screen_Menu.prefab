@@ -3155,6 +3155,7 @@ GameObject:
   - component: {fileID: 3594765533639333466}
   - component: {fileID: 6275974854139903661}
   - component: {fileID: 6768858798259580411}
+  - component: {fileID: 3144254399596239615}
   m_Layer: 0
   m_Name: Screen_Menu
   m_TagString: Untagged
@@ -3359,6 +3360,19 @@ MonoBehaviour:
   instructionDelay: 3
   selectionDelay: 0.9
   cardStagger: 0.1
+--- !u!114 &3144254399596239615
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6284298459519391856}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0aa09ffdc3b898a45835f6eb40c8b1c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChannelVolume
+  channel: 1
 --- !u!1 &6674240183428839869
 GameObject:
   m_ObjectHideFlags: 0

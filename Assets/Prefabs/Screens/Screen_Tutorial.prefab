@@ -139,6 +139,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VideoSurface
   image: {fileID: 2964902382640150282}
   fitter: {fileID: 717128939718008520}
+  playAudio: 0
 --- !u!1 &6581819066289793633
 GameObject:
   m_ObjectHideFlags: 0
@@ -153,6 +154,7 @@ GameObject:
   - component: {fileID: 1380729869424748148}
   - component: {fileID: 5260702082911048052}
   - component: {fileID: 5789055715145343288}
+  - component: {fileID: 2187415434483409402}
   m_Layer: 0
   m_Name: Screen_Tutorial
   m_TagString: Untagged
@@ -350,6 +352,19 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &2187415434483409402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6581819066289793633}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0aa09ffdc3b898a45835f6eb40c8b1c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChannelVolume
+  channel: 1
 --- !u!1001 &3109129749023470754
 PrefabInstance:
   m_ObjectHideFlags: 0

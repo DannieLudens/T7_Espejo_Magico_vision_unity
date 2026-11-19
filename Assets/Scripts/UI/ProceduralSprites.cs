@@ -93,19 +93,26 @@ public static class ProceduralSprites
     // 9-sliced CSS box-shadow (0 0 blur) of a rounded rectangle, padded by `blur` px and clipped inside the box like CSS.
     public static Sprite RoundedRectShadow(int radius, float blur)
     {
+        return RoundedRectShadow(radius, blur, true); // clipped under the box
+    }
+
+    // Blurred rounded box; clipInside = false keeps the shadow under the box too (for offset box-shadows
+    // under a nearly opaque element, where CSS clipping would leave a bright gap between box and shadow).
+    public static Sprite RoundedRectShadow(int radius, float blur, bool clipInside)
+    {
         int pad = Mathf.CeilToInt(blur);             // the shadow reaches `blur` px past the box
         int core = radius * 2 + 2;                   // box corners plus a 2px stretchable middle
         int size = core + pad * 2;                   // texture side
         float sigma = Mathf.Max(blur * 0.5f, 0.01f); // CSS blur radius = 2 sigma
         float b = pad + radius + 1;                  // slice border keeps the blurred corners intact
-        return Create("roundedRectShadow" + radius + "_" + blur, size, size, (x, y) =>
+        return Create("roundedRectShadow" + radius + "_" + blur + (clipInside ? "" : "_filled"), size, size, (x, y) =>
         {
             float half = size * 0.5f;                                                     // texture center
             var p = new Vector2(Mathf.Abs(x + 0.5f - half), Mathf.Abs(y + 0.5f - half)); // fold into one quadrant
             var q = p - new Vector2(core * 0.5f - radius, core * 0.5f - radius);          // past the straight edges
             float d = Vector2.Max(q, Vector2.zero).magnitude + Mathf.Min(Mathf.Max(q.x, q.y), 0f) - radius; // box SDF
             float shadow = 1f / (1f + Mathf.Exp(1.702f * d / sigma));                    // Gaussian-blurred edge
-            return White(shadow * Mathf.Clamp01(d + 0.5f));                              // outer shadow only
+            return White(clipInside ? shadow * Mathf.Clamp01(d + 0.5f) : shadow);        // outer shadow only, or filled
         }, new Vector4(b, b, b, b));
     }
 

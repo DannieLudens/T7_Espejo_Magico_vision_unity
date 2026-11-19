@@ -187,6 +187,8 @@ public class PresenterCard : MonoBehaviour
     {
         float now = Time.unscaledTime;                                              // animation clock
         ApplyEntrance(now);                                                         // cardSlideIn
+        stripes.color = new Color(1f, 1f, 1f, CardGlass.Stripes);                   // opacity: var(--card-stripes-opacity)
+        sparkle.color = new Color(1f, 1f, 1f, CardGlass.Sparkle);                   // opacity: var(--card-sparkle-opacity)
 
         float h = _hover.Evaluate(now);                                             // 0..1 (overshoots)
         float s = Mathf.LerpUnclamped(1f, 1.045f, h);                               // scale(1.045)

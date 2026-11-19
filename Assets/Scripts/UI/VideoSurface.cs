@@ -10,6 +10,7 @@ public class VideoSurface : MonoBehaviour
 {
     [SerializeField] RawImage image;          // shows the decoded frames
     [SerializeField] AspectRatioFitter fitter; // contain / cover behaviour
+    [SerializeField] bool playAudio;           // unmuted <video> (exp-video); the rest are muted
 
     public event Action Finished;             // 'ended' (only when not looping)
 
@@ -28,7 +29,13 @@ public class VideoSurface : MonoBehaviour
         _player.playOnAwake = false;                              // started from code
         _player.source = VideoSource.Url;                         // required on WebGL
         _player.renderMode = VideoRenderMode.RenderTexture;       // decode off-screen
-        _player.audioOutputMode = VideoAudioOutputMode.None;      // voice comes from AudioSources
+        if (playAudio)                                            // exp-video keeps its soundtrack
+        {
+            _player.audioOutputMode = VideoAudioOutputMode.Direct; // the only mode WebGL supports
+            _player.controlledAudioTrackCount = 1;                // first audio track
+            _player.EnableAudioTrack(0, true);                    // play it
+        }
+        else _player.audioOutputMode = VideoAudioOutputMode.None; // muted video
         _player.prepareCompleted += OnPrepared;                   // start when ready
         _player.loopPointReached += OnLoopPoint;                  // end of clip
         _player.errorReceived += OnError;                         // log failures
@@ -74,6 +81,12 @@ public class VideoSurface : MonoBehaviour
         if (fitter != null) fitter.aspectRatio = (float)w / h;                  // contain / cover
         image.enabled = true;                                                   // visible
         source.Play();                                                          // play()
+    }
+
+    // Follows the operator's video volume (expVideo.volume = mf * video).
+    void LateUpdate()
+    {
+        if (playAudio) _player.SetDirectAudioVolume(0, AudioLevels.Video); // Direct output ignores the AudioListener
     }
 
     // Raises Finished when a non-looping clip ends.

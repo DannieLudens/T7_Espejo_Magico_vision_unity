@@ -52,6 +52,7 @@ public class VoiceTrack
         }
         if (_source.isPlaying || Time.unscaledTime - _startedAt < MinimumPlayback) return false; // still talking
         IsActive = false;                                                      // onended
+        Captions.NotifyEnded(_source);                                         // 'ended' clears the caption
         return true;
     }
 
@@ -60,5 +61,6 @@ public class VoiceTrack
     {
         _source.Play();                    // play()
         _startedAt = Time.unscaledTime;    // for end detection
+        Captions.Attach(_source, _source.clip); // attachCaptions(audioEl, getCaptionUrl(audioEl.src))
     }
 }
