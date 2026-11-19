@@ -157,12 +157,12 @@ public class PinzaDetector : MonoBehaviour
 
             if (indiceX >= minX && indiceX <= maxX && indiceY >= minY && indiceY <= maxY)
             {
-                panel.imagenPanel.color = panel.colorHover;
+                if (panel.imagenPanel != null) panel.imagenPanel.color = panel.colorHover;
                 _panelActual = panel;
             }
             else
             {
-                panel.imagenPanel.color = panel.colorNormal;
+                if (panel.imagenPanel != null) panel.imagenPanel.color = panel.colorNormal;
             }
         }
 
@@ -185,7 +185,15 @@ public class PinzaDetector : MonoBehaviour
                 _seleccionHecha = true;
                 var runner = FindAnyObjectByType<Mediapipe.Unity.Sample.HandLandmarkDetection.HandLandmarkerRunner>();
                 if (runner != null) runner.Stop();
-                StartCoroutine(CargarEscenaConDelay(_panelActual.escenaDestino));
+
+                var vanity = FindAnyObjectByType<VanityFrameController>();
+                float demora = 0.5f;
+                if (vanity != null)
+                {
+                    vanity.DispararParpadeo();
+                    demora = vanity.TiempoParpadeo + 0.15f;
+                }
+                StartCoroutine(CargarEscenaConDelay(_panelActual.escenaDestino, demora));
             }
         }
         else
@@ -204,16 +212,19 @@ public class PinzaDetector : MonoBehaviour
         }
     }
 
-    void DesresaltarTodos()
+void DesresaltarTodos()
     {
         if (paneles == null) return;
         foreach (var panel in paneles)
+        {
+            if (panel == null || panel.imagenPanel == null) continue;
             panel.imagenPanel.color = panel.colorNormal;
+        }
     }
 
-IEnumerator CargarEscenaConDelay(string escena)
+IEnumerator CargarEscenaConDelay(string escena, float demora = 0.5f)
     {
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(demora);
         bool esExperiencia = escena.Contains("Pres_") || escena.Contains("Experiencia");
         LoadingController.ModoLoading = esExperiencia 
             ? LoadingController.ModoLoadingTipo.MenuAExperiencia 
