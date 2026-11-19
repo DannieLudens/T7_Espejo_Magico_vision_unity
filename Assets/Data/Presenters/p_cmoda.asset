@@ -20,5 +20,6 @@ MonoBehaviour:
   background: {fileID: 21300000, guid: 616d4233901d2564ebbc45d7313fe06f, type: 3}
   finalBackground: {fileID: 21300000, guid: fcd015c26a6a0ce4398a1f8d76704639, type: 3}
   accentColor: {r: 0.95686275, g: 0.63529414, b: 0.38039216, a: 1}
+  introAudio: {fileID: 8300000, guid: 992655ac7bf281443a6fc12299804b8e, type: 3}
   cardCharacterHeight: 0.92
   cardCharacterAnchorX: 0.5

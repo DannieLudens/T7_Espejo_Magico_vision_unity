@@ -1,4 +1,5 @@
-using UnityEngine; // MonoBehaviour, Vector2
+using System.Collections; // IEnumerator
+using UnityEngine;        // MonoBehaviour, Vector2
 
 // Base class for one full-screen view; the state machine shows it for the states it handles.
 // While the screen GameObject is active it receives hand gesture callbacks (web document listeners).
@@ -25,6 +26,13 @@ public class ScreenController : MonoBehaviour
 
     // Called right before the screen is hidden or switches to another of its states.
     public virtual void OnExit(AppState state) { }
+
+    // Transitions as soon as the state machine is free; automatic exits can fire while a fade is still running.
+    protected IEnumerator TransitionWhenIdle(AppState next)
+    {
+        while (Machine.IsTransitioning) yield return null; // the web would silently drop this request
+        Machine.TransitionTo(next);                        // go
+    }
 
     // Subscribes the gesture hooks while the screen is visible.
     protected virtual void OnEnable()

@@ -61,12 +61,13 @@ public class ShapeImage : MonoBehaviour
         FitPillCorners(); // radius = half height
     }
 
-    // Scales the 9-slice border so the corner radius equals half of the element height.
+    // Scales the 9-slice border so the corner radius equals half of the shorter side (horizontal or vertical pills).
     void FitPillCorners()
     {
         if (shape != Shape.Pill && shape != Shape.PillOutline) return; // only pills are sliced
-        float height = ((RectTransform)transform).rect.height;        // current UI height
-        if (height <= 0f) return;                                      // layout not ready yet
-        _image.pixelsPerUnitMultiplier = resolution / height;          // border px = (res/2) / multiplier = height/2
+        var rect = ((RectTransform)transform).rect;                     // current UI size
+        float side = Mathf.Min(rect.width, rect.height);                // border-radius: 999px uses the short side
+        if (side <= 0f) return;                                         // layout not ready yet
+        _image.pixelsPerUnitMultiplier = resolution / side;             // border px = (res/2) / multiplier = side/2
     }
 }

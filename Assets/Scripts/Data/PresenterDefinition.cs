@@ -10,6 +10,7 @@ public class PresenterDefinition : ScriptableObject
     public Sprite background;                // fondo: studio set (menu hover and card background)
     public Sprite finalBackground;           // fondoFinal: used by intro and final screens
     public Color accentColor = Color.white;  // accentColor
+    public AudioClip introAudio;             // introAudio: voice played on the Intro screen
 
     [Header("Menu card framing (per-presenter CSS overrides)")]
     [Tooltip("background-size: auto X% -> character height as a fraction of the card height")]
