@@ -26,6 +26,8 @@ public class MirrorFrame : MonoBehaviour
         public Image Glow;              // the box-shadow halo
         public float Phase;             // negative animation-delay in seconds
         public float FlashStart = -10f; // when the current flash started
+        public float FlashLength = 0.32f; // duration of the current flash animation
+        public bool CameraFlash;        // cameraFlashAnim instead of bulbFlash
     }
 
     readonly List<Bulb> _bulbs = new List<Bulb>();  // all bulbs, any order
@@ -70,7 +72,29 @@ public class MirrorFrame : MonoBehaviour
     public void TriggerSelectionFlash()
     {
         float now = Time.unscaledTime;                                                // wave start
-        for (int k = 0; k < _byWave.Count; k++) _byWave[k].FlashStart = now + k * flashStep; // staggered by perimeter order
+        for (int k = 0; k < _byWave.Count; k++) StartFlash(_byWave[k], now + k * flashStep, flashDuration, false); // staggered by perimeter order
+    }
+
+    // Uniform blink of every bulb on each countdown tick (web triggerCountdownBlink: bulbFlash 0.28s).
+    public void TriggerCountdownBlink()
+    {
+        float now = Time.unscaledTime;                          // all at once
+        foreach (var bulb in _bulbs) StartFlash(bulb, now, 0.28f, false); // .countdown-blink
+    }
+
+    // Photo flash: every bulb bright white at the same time (web triggerCameraFlash: cameraFlashAnim 0.75s).
+    public void TriggerCameraFlash()
+    {
+        float now = Time.unscaledTime;                          // all at once
+        foreach (var bulb in _bulbs) StartFlash(bulb, now, 0.75f, true); // .camera-flash
+    }
+
+    // Schedules one flash animation on a bulb.
+    static void StartFlash(Bulb bulb, float start, float length, bool camera)
+    {
+        bulb.FlashStart = start;   // animation start
+        bulb.FlashLength = length; // animation-duration
+        bulb.CameraFlash = camera; // which keyframes
     }
 
     // Animates every bulb: pulse by default, flash keyframes while flashing.
@@ -79,8 +103,10 @@ public class MirrorFrame : MonoBehaviour
         float now = Time.unscaledTime; // CSS animations ignore game time scale
         foreach (var bulb in _bulbs)
         {
-            float flashT = (now - bulb.FlashStart) / flashDuration; // 0..1 while flashing
-            if (flashT >= 0f && flashT <= 1f) ApplyFlash(bulb, flashT); // bulbFlash overrides the pulse
+            float flashT = (now - bulb.FlashStart) / bulb.FlashLength; // 0..1 while flashing
+            bool flashing = flashT >= 0f && flashT <= 1f;              // a flash class is applied
+            if (flashing && bulb.CameraFlash) ApplyCameraFlash(bulb, flashT); // cameraFlashAnim overrides the pulse
+            else if (flashing) ApplyFlash(bulb, flashT);               // bulbFlash overrides the pulse
             else ApplyPulse(bulb, CssEasing.PingPong(now + bulb.Phase, PulseCycle)); // bulbPulse continues its timeline
         }
     }
@@ -110,6 +136,19 @@ public class MirrorFrame : MonoBehaviour
             Paint(bulb, Color.Lerp(FlashMid, WarmCore, k), Mathf.Lerp(0.9f, 0.55f, k), WarmGlow,
                   bulbSize + 2f * Mathf.Lerp(21f, 6f, k), Mathf.Lerp(0.8f, 0.4f, k));                      // back to resting warm
         }
+    }
+
+    // cameraFlashAnim keyframes: white until 40%, then back to warm; box-shadow is only set at 0% and 100%,
+    // so it shrinks across the whole animation (ease-out).
+    void ApplyCameraFlash(Bulb bulb, float t)
+    {
+        float k = CssEasing.EaseOut(t);                                                 // box-shadow track 0% -> 100%
+        float glowSize = bulbSize + 2f * Mathf.Lerp(45f, 6f, k);                        // 0 0 30px 15px -> 0 0 4px 2px
+        float glowAlpha = Mathf.Lerp(1f, 0.4f, k);                                      // shadow alpha
+        var glow = Color.Lerp(Color.white, WarmGlow, k);                                // white -> warm halo
+        if (t < 0.4f) { Paint(bulb, Color.white, 1f, glow, glowSize, glowAlpha); return; } // 0% -> 40%: solid white
+        float b = CssEasing.EaseOut((t - 0.4f) / 0.6f);                                 // 40% -> 100% segment
+        Paint(bulb, Color.Lerp(Color.white, WarmCore, b), Mathf.Lerp(1f, 0.55f, b), glow, glowSize, glowAlpha); // fade to rest
     }
 
     // Writes color, opacity and glow to the two images of a bulb.

@@ -8,8 +8,10 @@ public class FinalScreen : ScreenController
 {
     [Header("Sub-modes")]
     [SerializeField] GameObject resultMode;       // #final-result-mode
-    [SerializeField] GameObject photoboothMode;   // #final-photobooth-mode (pending)
-    [SerializeField] GameObject photoMode;        // #final-photo-mode (pending)
+    [SerializeField] GameObject photoboothMode;   // #final-photobooth-mode
+    [SerializeField] PhotoboothView photobooth;   // camera, 📷 button and countdown
+    [SerializeField] GameObject photoMode;        // #final-photo-mode (QR pending)
+    [SerializeField] RawImage photoPreview;       // #captured-photo-img
 
     [Header("Result mode")]
     [SerializeField] Image presenterImage;        // #final-presenter-img (object-fit: contain)
@@ -37,13 +39,37 @@ public class FinalScreen : ScreenController
         photoboothMode.SetActive(state == AppState.Photobooth);  // _showFinalMode('photobooth')
         photoMode.SetActive(state == AppState.PhotoResult);      // _showFinalMode('photo')
         if (state == AppState.Final) SetupResult();              // _setupFinal
+        if (state == AppState.Photobooth) photobooth.Enter();    // _enterPhotoBooth
+        if (state == AppState.PhotoResult) ShowPhoto();          // _showPhotoResult
     }
 
-    // Leaving any sub-mode stops the hand states of the buttons.
+    // Leaving any sub-mode stops the hand states of the buttons and the photobooth camera.
     public override void OnExit(AppState state)
     {
-        makeupButton.ResetState(); // no hover/near/selecting left behind
+        makeupButton.ResetState();                          // no hover/near/selecting left behind
         menuButton.ResetState();
+        if (state == AppState.Photobooth) photobooth.Exit(); // stopPhotoBooth / pause filters
+    }
+
+    // Shows the captured photo (the QR and its buttons come in the next step).
+    void ShowPhoto()
+    {
+        photoPreview.texture = AppSession.LastPhoto;          // img.src = dataURL
+        photoPreview.enabled = AppSession.LastPhoto != null;  // nothing captured
+    }
+
+    // Photo captured: keep it for the result mode and switch to it.
+    void OnPhotoTaken(Texture2D photo)
+    {
+        if (AppSession.LastPhoto != null && AppSession.LastPhoto != photo) Destroy(AppSession.LastPhoto); // free the previous photo
+        AppSession.LastPhoto = photo;                                   // dataURL
+        if (Machine.Current == AppState.Photobooth) Machine.TransitionTo(AppState.PhotoResult); // _showPhotoResult
+    }
+
+    // "← Volver" in the photobooth goes to the presenter menu (same as the web).
+    void OnPhotoboothBack()
+    {
+        if (Machine.Current == AppState.Photobooth) Machine.TransitionTo(AppState.Menu); // _transitionTo(MENU)
     }
 
     // Image, CTA alignment, presenter name and the auto-return timer (web _setupFinal).
@@ -126,6 +152,8 @@ public class FinalScreen : ScreenController
     {
         base.OnEnable();                         // shared gesture hooks
         HandGestures.PinchEnded += OnPinchEnded; // extra hook for this screen
+        photobooth.PhotoTaken += OnPhotoTaken;   // capture finished
+        photobooth.BackRequested += OnPhotoboothBack; // "← Volver"
     }
 
     // Removes the extra hook.
@@ -133,11 +161,14 @@ public class FinalScreen : ScreenController
     {
         base.OnDisable();                        // shared gesture hooks
         HandGestures.PinchEnded -= OnPinchEnded; // stop listening
+        photobooth.PhotoTaken -= OnPhotoTaken;   // stop listening
+        photobooth.BackRequested -= OnPhotoboothBack;
     }
 
-    // Hover follows the fingertip (web _onFinalHandMove).
+    // Hover follows the fingertip (web _onFinalHandMove / _onPhotoBoothHandMove).
     protected override void OnHandMoved(Vector2 screenPosition)
     {
+        if (Machine.Current == AppState.Photobooth) { photobooth.HandMoved(screenPosition); return; } // 📷 hover
         if (Machine.Current != AppState.Final) return; // result mode only
         var hit = ButtonAt(screenPosition);           // _getFinalBtnAt
         makeupButton.HandHover = hit == makeupButton; // .hovered toggle
@@ -149,6 +180,7 @@ public class FinalScreen : ScreenController
     {
         makeupButton.HandHover = menuButton.HandHover = false; // no hovered button
         OnPinchEnded();                                        // no pinch either
+        photobooth.HandLost();                                 // no 📷 hover
     }
 
     // The button under the pinch shows .selecting and fills its bar (web _onPinchProgress FINAL).
@@ -166,6 +198,7 @@ public class FinalScreen : ScreenController
     // Pinch completed over a button runs its action (web _handleFinalPinch).
     protected override void OnPinchConfirmed(Vector2 screenPosition)
     {
+        if (Machine.Current == AppState.Photobooth) { photobooth.PinchConfirmed(screenPosition); return; } // back or 📷
         if (Machine.Current != AppState.Final) return; // result mode only
         var hit = ButtonAt(screenPosition);           // button under the pinch
         if (hit == makeupButton) OnMakeupClicked();    // data-action="makeup"
