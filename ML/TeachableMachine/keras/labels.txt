@@ -1,0 +1,8 @@
+0 Ninguno
+1 PolvoDeMaquillaje
+2 Labial
+3 Sombras
+4 Pintucaritas
+5 Delineador1
+6 Delineador2
+7 BaseDeMaquillaje
