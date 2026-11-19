@@ -1,6 +1,7 @@
 using System;             // Action
 using System.Collections; // IEnumerator
-using UnityEngine;        // MonoBehaviour, Input, KeyCode, Debug
+using UnityEngine;                // MonoBehaviour, Debug
+using UnityEngine.InputSystem;    // Keyboard
 
 // Single-scene state machine that shows one screen at a time (port of _transitionTo in js/app.js).
 public class AppStateMachine : MonoBehaviour
@@ -86,9 +87,11 @@ public class AppStateMachine : MonoBehaviour
     // Port of the web keydown handler: N opens the menu, M the mirror, ESC goes back.
     void HandleOperatorShortcuts()
     {
-        if (Input.GetKeyDown(KeyCode.M)) TransitionTo(AppState.Mirror);          // magic mirror from anywhere
-        if (Input.GetKeyDown(KeyCode.N)) TransitionTo(AppState.Menu);            // presenter menu from anywhere
-        if (Input.GetKeyDown(KeyCode.Escape)) TransitionTo(BackTarget(Current)); // one level back
+        var keyboard = Keyboard.current;                                           // null when no keyboard is connected
+        if (keyboard == null) return;                                              // kiosk without keyboard
+        if (keyboard.mKey.wasPressedThisFrame) TransitionTo(AppState.Mirror);      // magic mirror from anywhere
+        if (keyboard.nKey.wasPressedThisFrame) TransitionTo(AppState.Menu);        // presenter menu from anywhere
+        if (keyboard.escapeKey.wasPressedThisFrame) TransitionTo(BackTarget(Current)); // one level back
     }
 
     // Where ESC leads from each state (same rules as the web).
