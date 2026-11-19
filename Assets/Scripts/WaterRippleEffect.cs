@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using UnityEngine;
 using UnityEngine.UI;
-using Mediapipe.Tasks.Vision.HandLandmarker;
 
 [RequireComponent(typeof(RawImage))]
 public class WaterRippleEffect : MonoBehaviour
@@ -25,8 +24,10 @@ public class WaterRippleEffect : MonoBehaviour
     private ConcurrentQueue<Vector2> _queue = new ConcurrentQueue<Vector2>();
     private Vector2? _touch = null;
 
-    void OnEnable()  => Mediapipe.Unity.Sample.HandLandmarkDetection.PinzaEventBus.OnResultado += OnHand;
-    void OnDisable() => Mediapipe.Unity.Sample.HandLandmarkDetection.PinzaEventBus.OnResultado -= OnHand;
+    // Subscribes to the platform-agnostic hand tracking feed.
+    void OnEnable()  => HandTrackingService.FrameReceived += OnHand; // listen to Editor/Windows/WebGL provider
+    // Unsubscribes from the hand tracking feed.
+    void OnDisable() => HandTrackingService.FrameReceived -= OnHand; // stop listening when disabled
 
     void Start()
     {
@@ -45,8 +46,7 @@ public class WaterRippleEffect : MonoBehaviour
     void TryInit()
     {
         _frame++;
-        var mpScreen = FindObjectOfType<Mediapipe.Unity.Screen>();
-        Texture tex = mpScreen?.texture;
+        Texture tex = HandTrackingService.GetCameraTexture(); // camera texture exposed by the active provider
         if (_frame % 60 == 0)
             Debug.Log("[WR] TryInit f=" + _frame + " mpTex=" + (tex != null ? tex.GetType().Name + " " + tex.width : "null"));
         if (tex is RenderTexture) return;
@@ -120,13 +120,13 @@ public class WaterRippleEffect : MonoBehaviour
         return new Vector2((local.x - rect.x) / rect.width, (local.y - rect.y) / rect.height);
     }
 
-    void OnHand(HandLandmarkerResult r)
+    // Queues a splash at the tracked landmark position (runs on the provider's thread).
+    void OnHand(HandFrame frame)
     {
-        if (r.handLandmarks == null || r.handLandmarks.Count == 0) return;
-        var lm = r.handLandmarks[0].landmarks;
-        if (lm.Count <= handLandmarkIndex) return;
-        var p = lm[handLandmarkIndex];
-        _queue.Enqueue(new Vector2(p.x, 1f - p.y));
+        if (!frame.HasHand) return;                                         // no hand, no splash
+        if (handLandmarkIndex < 0 || handLandmarkIndex >= frame.Landmarks.Length) return; // invalid index in inspector
+        var p = frame.Landmarks[handLandmarkIndex];                         // tracked landmark (default: palm center)
+        _queue.Enqueue(new Vector2(p.x, 1f - p.y));                         // flip Y from image space to UV space
     }
 
     Material SplashMat()

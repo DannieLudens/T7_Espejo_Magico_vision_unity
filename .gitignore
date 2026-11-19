@@ -36,6 +36,9 @@ Assets/AssetStoreTools*
 # JetBrains
 .idea/
 
+# Claude Code local session files
+.claude/
+
 runs/
 Training_DataSet_v1_YOLOv11/
 venv/

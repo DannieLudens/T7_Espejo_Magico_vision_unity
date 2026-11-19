@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Mediapipe.Tasks.Vision.HandLandmarker;
 
 public class StandbyController : MonoBehaviour
 {
@@ -13,21 +12,24 @@ public class StandbyController : MonoBehaviour
 
     private float _tiempoPinza = 0f;
     private bool _navegando = false;
-    private ConcurrentQueue<HandLandmarkerResult> _cola = new ConcurrentQueue<HandLandmarkerResult>();
+    private ConcurrentQueue<HandFrame> _cola = new ConcurrentQueue<HandFrame>(); // frames arrive off the main thread
 
+    // Subscribes to the platform-agnostic hand tracking feed.
     void OnEnable()
     {
-        Mediapipe.Unity.Sample.HandLandmarkDetection.PinzaEventBus.OnResultado += EnColarResultado;
+        HandTrackingService.FrameReceived += EnColarResultado; // listen to Editor/Windows/WebGL provider
     }
 
+    // Unsubscribes from the hand tracking feed.
     void OnDisable()
     {
-        Mediapipe.Unity.Sample.HandLandmarkDetection.PinzaEventBus.OnResultado -= EnColarResultado;
+        HandTrackingService.FrameReceived -= EnColarResultado; // stop listening when disabled
     }
 
-    void EnColarResultado(HandLandmarkerResult resultado)
+    // Queues a frame so it is processed on the main thread in Update.
+    void EnColarResultado(HandFrame resultado)
     {
-        _cola.Enqueue(resultado);
+        _cola.Enqueue(resultado); // thread-safe handoff
     }
 
     void Update()
@@ -40,19 +42,18 @@ public class StandbyController : MonoBehaviour
         }
     }
 
-    void ProcesarResultado(HandLandmarkerResult resultado)
+    // Accumulates pinch time and navigates to the menu once it is held long enough.
+    void ProcesarResultado(HandFrame resultado)
     {
-        if (resultado.handLandmarks == null || resultado.handLandmarks.Count == 0)
+        if (!resultado.HasHand) // no hand in this frame
         {
-            _tiempoPinza = 0f;
-            return;
+            _tiempoPinza = 0f; // reset the pinch timer
+            return;            // nothing to evaluate
         }
 
-        var landmarks = resultado.handLandmarks[0].landmarks;
-        if (landmarks.Count < 21) return;
-
-        var pulgar = landmarks[4];
-        var indice = landmarks[8];
+        var landmarks = resultado.Landmarks;        // 21 normalized landmarks of the first hand
+        var pulgar = landmarks[HandFrame.ThumbTip]; // thumb tip
+        var indice = landmarks[HandFrame.IndexTip]; // index finger tip
 
         float distancia = Vector2.Distance(
             new Vector2(pulgar.x, pulgar.y),
@@ -65,8 +66,7 @@ public class StandbyController : MonoBehaviour
             if (_tiempoPinza >= tiempoRequerido)
             {
                 _navegando = true;
-                var runner = FindAnyObjectByType<Mediapipe.Unity.Sample.HandLandmarkDetection.HandLandmarkerRunner>();
-                if (runner != null) runner.Stop();
+                HandTrackingService.RequestStop(); // stop camera/model before leaving the scene
                 StartCoroutine(Navegar());
             }
         }

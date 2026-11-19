@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
-using Mediapipe.Tasks.Vision.HandLandmarker;
 
 public class PinzaDetector : MonoBehaviour
 {
@@ -28,7 +27,7 @@ public class PinzaDetector : MonoBehaviour
     private float _tiempoPinza = 0f;
     private bool _seleccionHecha = false;
     private float _tiempoSinMano = 0f;
-    private ConcurrentQueue<HandLandmarkerResult> _cola = new ConcurrentQueue<HandLandmarkerResult>();
+    private ConcurrentQueue<HandFrame> _cola = new ConcurrentQueue<HandFrame>(); // frames arrive off the main thread
     private PanelOpcion _panelActual = null;
     private float _cursorX = 0f;
     private float _cursorY = 0f;
@@ -46,19 +45,22 @@ public class PinzaDetector : MonoBehaviour
         public Color colorHover = new Color(0.4f, 0.6f, 1f);
     }
 
+    // Subscribes to the platform-agnostic hand tracking feed.
     void OnEnable()
     {
-        Mediapipe.Unity.Sample.HandLandmarkDetection.PinzaEventBus.OnResultado += EnColarResultado;
+        HandTrackingService.FrameReceived += EnColarResultado; // listen to Editor/Windows/WebGL provider
     }
 
+    // Unsubscribes from the hand tracking feed.
     void OnDisable()
     {
-        Mediapipe.Unity.Sample.HandLandmarkDetection.PinzaEventBus.OnResultado -= EnColarResultado;
+        HandTrackingService.FrameReceived -= EnColarResultado; // stop listening when disabled
     }
 
-    void EnColarResultado(HandLandmarkerResult resultado)
+    // Queues a frame so it is processed on the main thread in Update.
+    void EnColarResultado(HandFrame resultado)
     {
-        _cola.Enqueue(resultado);
+        _cola.Enqueue(resultado); // thread-safe handoff
     }
 
     void Update()
@@ -90,8 +92,7 @@ public class PinzaDetector : MonoBehaviour
             if (_tiempoSinMano >= timeoutPorInactividad)
             {
                 _seleccionHecha = true;
-                var runner = FindAnyObjectByType<Mediapipe.Unity.Sample.HandLandmarkDetection.HandLandmarkerRunner>();
-                if (runner != null) runner.Stop();
+                HandTrackingService.RequestStop(); // stop camera/model before leaving the scene
                 StartCoroutine(CargarEscenaConDelay("0_Standby"));
             }
         }
@@ -106,10 +107,10 @@ public class PinzaDetector : MonoBehaviour
         }
     }
 
-    void ProcesarResultado(HandLandmarkerResult resultado)
+    // Moves the cursor, highlights panels and detects the pinch for one hand frame.
+    void ProcesarResultado(HandFrame resultado)
     {
-        //Debug.Log("ProcesarResultado llamado");
-        if (resultado.handLandmarks == null || resultado.handLandmarks.Count == 0)
+        if (!resultado.HasHand) // no hand in this frame
         {
             _tiempoPinza = 0f;
             _manoDetectada = false;
@@ -124,10 +125,9 @@ public class PinzaDetector : MonoBehaviour
         _tiempoSinMano = 0f;
         if (cursorMano != null) cursorMano.gameObject.SetActive(true);
 
-        var landmarks = resultado.handLandmarks[0].landmarks;
-        if (landmarks.Count < 21) return;
-        var pulgar = landmarks[4];
-        var indice = landmarks[8];
+        var landmarks = resultado.Landmarks;          // 21 normalized landmarks of the first hand
+        var pulgar = landmarks[HandFrame.ThumbTip];   // thumb tip
+        var indice = landmarks[HandFrame.IndexTip];   // index finger tip
 
         // Posicion del indice en pantalla
         // Invertir X porque la camara esta espejada
@@ -183,8 +183,7 @@ public class PinzaDetector : MonoBehaviour
             if (_tiempoPinza >= tiempoRequerido)
             {
                 _seleccionHecha = true;
-                var runner = FindAnyObjectByType<Mediapipe.Unity.Sample.HandLandmarkDetection.HandLandmarkerRunner>();
-                if (runner != null) runner.Stop();
+                HandTrackingService.RequestStop(); // stop camera/model before leaving the scene
 
                 var vanity = FindAnyObjectByType<VanityFrameController>();
                 float demora = 0.5f;
