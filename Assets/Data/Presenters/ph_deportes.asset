@@ -23,3 +23,43 @@ MonoBehaviour:
   introAudio: {fileID: 8300000, guid: a95ac5b6f24bad34cbd1726115009a3e, type: 3}
   cardCharacterHeight: 1.05
   cardCharacterAnchorX: 0.41
+  idleVideos:
+  - Videos_Definitivos/Presentador_De_Deportes/Idles/Idle 1.mp4
+  - Videos_Definitivos/Presentador_De_Deportes/Idles/Idle 2.mp4
+  - Videos_Definitivos/Presentador_De_Deportes/Idles/Idle 3.mp4
+  scenes:
+  - videos:
+    - Videos_Definitivos/Presentador_De_Deportes/Escena1.mp4
+    audios:
+    - {fileID: 8300000, guid: 941516b562e62c247ab69a0a1564308b, type: 3}
+    hasCheckpoint: 1
+    objectVideo: videos/Prototipo/Objetos/Box_base.mp4
+    hint: "Muestra la base de maquillaje a la c\xE1mara"
+    detectLabels:
+    - BaseDeMaquillaje
+  - videos:
+    - Videos_Definitivos/Presentador_De_Deportes/Escena2.mp4
+    audios:
+    - {fileID: 8300000, guid: 926e5d2824e054d48acc5aad886801ef, type: 3}
+    hasCheckpoint: 1
+    objectVideo: videos/Prototipo/Objetos/Box_rubor.mp4
+    hint: "Muestra el rubor a la c\xE1mara"
+    detectLabels:
+    - PolvoDeMaquillaje
+  - videos:
+    - Videos_Definitivos/Presentador_De_Deportes/Escena3.mp4
+    audios:
+    - {fileID: 8300000, guid: 27e16c9547679ed46b7258824e55803d, type: 3}
+    hasCheckpoint: 1
+    objectVideo: videos/Prototipo/Objetos/box_pintucaritas.mp4
+    hint: "Muestra las pintucaritas a la c\xE1mara"
+    detectLabels:
+    - Pintucaritas
+  - videos:
+    - Videos_Definitivos/Presentador_De_Deportes/Escena4.mp4
+    audios:
+    - {fileID: 8300000, guid: ad37aae77b9ac6548a5de94040d37cbb, type: 3}
+    hasCheckpoint: 0
+    objectVideo: 
+    hint: 
+    detectLabels: []

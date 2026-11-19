@@ -60,6 +60,24 @@ public static class ProceduralSprites
             (x, y) => White(Mathf.Clamp01(half - Mathf.Abs(EllipseDistance(x, y, width, height, half)) + 0.5f)), Vector4.zero);
     }
 
+    // 9-sliced rounded rectangle fill (CSS border-radius: radius px); stretch it to any size.
+    public static Sprite RoundedRect(int radius)
+    {
+        int size = radius * 2 + 2;     // corners plus a 2px stretchable middle
+        float b = radius + 1;          // slice border
+        return Create("roundedRect" + radius, size, size, (x, y) => White(Mathf.Clamp01(0.5f - RoundedRectDistance(x, y, size, radius))), new Vector4(b, b, b, b));
+    }
+
+    // 9-sliced rounded rectangle outline with the stroke inside the edge (CSS border: thickness px solid).
+    public static Sprite RoundedRectOutline(int radius, float thickness)
+    {
+        int size = radius * 2 + 2;     // corners plus a 2px stretchable middle
+        float b = radius + 1;          // slice border
+        float half = thickness * 0.5f; // stroke center inset
+        return Create("roundedRectOutline" + radius + "_" + thickness, size, size,
+            (x, y) => White(Mathf.Clamp01(half - Mathf.Abs(RoundedRectDistance(x, y, size, radius) + half) + 0.5f)), new Vector4(b, b, b, b));
+    }
+
     // CSS box-shadow of an ellipse: the shape blurred by `blur` px (Gaussian, sigma = blur / 2), padded on every side.
     public static Sprite EllipseShadow(int width, int height, float blur)
     {
@@ -137,6 +155,15 @@ public static class ProceduralSprites
         if (f < 1e-5f) return -Mathf.Min(a, b);                          // exact center
         float gradient = Mathf.Sqrt(px * px / (a * a * a * a) + py * py / (b * b * b * b)) / f; // |grad f|
         return (f - 1f) / gradient;                                      // first-order distance estimate
+    }
+
+    // Signed distance (pixels) from a pixel center to a rounded square of the given size and corner radius.
+    static float RoundedRectDistance(int x, int y, int size, float radius)
+    {
+        float half = size * 0.5f;                                                  // half extent
+        var p = new Vector2(Mathf.Abs(x + 0.5f - half), Mathf.Abs(y + 0.5f - half)); // fold into one quadrant
+        var q = p - new Vector2(half - radius, half - radius);                     // distance past the straight edges
+        return Vector2.Max(q, Vector2.zero).magnitude + Mathf.Min(Mathf.Max(q.x, q.y), 0f) - radius; // rounded box SDF
     }
 
     // Interpolates gradient stops at position t (CSS clamps outside the first/last stop).

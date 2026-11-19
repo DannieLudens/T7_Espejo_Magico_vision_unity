@@ -5,12 +5,13 @@ using UnityEngine.UI; // Image
 [ExecuteAlways, RequireComponent(typeof(Image))]
 public class ShapeImage : MonoBehaviour
 {
-    public enum Shape { Disc, Glow, Ring, Pill, PillOutline } // supported CSS look-alikes
+    public enum Shape { Disc, Glow, Ring, Pill, PillOutline, RoundedRect, RoundedRectOutline } // supported CSS look-alikes
 
     [SerializeField] Shape shape = Shape.Disc;     // which shape to draw
     [SerializeField] int resolution = 64;          // texture size in pixels
     [SerializeField] float ringRadius = 22f;       // Ring: SVG circle r (in texture pixels)
-    [SerializeField] float ringThickness = 3f;     // Ring: stroke width; PillOutline: border width
+    [SerializeField] float ringThickness = 3f;     // Ring: stroke width; outlines: border width
+    [SerializeField] int cornerRadius = 10;        // RoundedRect: border-radius in pixels
 
     Image _image; // cached target
 
@@ -56,6 +57,16 @@ public class ShapeImage : MonoBehaviour
             case Shape.PillOutline:
                 _image.sprite = ProceduralSprites.Ring(resolution, resolution * 0.5f - ringThickness * 0.5f - 0.5f, ringThickness); // edge ring
                 _image.type = Image.Type.Sliced;                                            // stretch the middle
+                break;
+            case Shape.RoundedRect:
+                _image.sprite = ProceduralSprites.RoundedRect(cornerRadius);                 // fixed-radius box
+                _image.type = Image.Type.Sliced;                                            // stretch the middle
+                _image.pixelsPerUnitMultiplier = 1f;                                        // radius in UI pixels
+                break;
+            case Shape.RoundedRectOutline:
+                _image.sprite = ProceduralSprites.RoundedRectOutline(cornerRadius, ringThickness); // fixed-radius border
+                _image.type = Image.Type.Sliced;                                            // stretch the middle
+                _image.pixelsPerUnitMultiplier = 1f;                                        // radius in UI pixels
                 break;
         }
         FitPillCorners(); // radius = half height

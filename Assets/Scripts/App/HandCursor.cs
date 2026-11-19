@@ -19,7 +19,10 @@ public class HandCursor : MonoBehaviour
     [SerializeField] float popGrowSeconds = 0.2f;         // pop transition duration
     [SerializeField] float popHoldSeconds = 0.3f;         // .pop removed after 300 ms
 
+    public static HandCursor Instance { get; private set; }  // single cursor layer in Main.unity
+
     RectTransform _root;                                     // full-screen parent used for coordinate conversion
+    bool _dwellActive;                                       // ring driven by a dwell selection
     Vector2 _target = new Vector2(-300f, -300f);             // latest finger position (local)
     Vector2 _current = new Vector2(-300f, -300f);            // rendered position (local)
     bool _handSeen;                                          // false until the first handMove
@@ -34,6 +37,7 @@ public class HandCursor : MonoBehaviour
     // Caches the root rect and hides everything until a hand appears.
     void Awake()
     {
+        Instance = this;                            // screens use it for dwell progress
         _root = (RectTransform)transform;           // cursor layer covers the whole screen
         lipstick.gameObject.SetActive(false);       // visibility: hidden
         pinchCursor.gameObject.SetActive(false);    // visibility: hidden
@@ -101,6 +105,20 @@ public class HandCursor : MonoBehaviour
         ClearPinch(); // remove .pinching and .active
     }
 
+    // Shows the ring centered on an element with a dwell progress (web curShowDwellProgress); progress 0 hides it.
+    public void ShowDwellProgress(float progress, Vector2 screenPosition)
+    {
+        if (progress <= 0f)                                          // dwell cancelled or confirmed
+        {
+            _dwellActive = false;                                    // .active removed
+            progressFill.fillAmount = 0f;                            // _curSetProgress(0)
+            return;
+        }
+        _dwellActive = true;                                         // .active
+        progressFill.fillAmount = progress;                          // stroke-dashoffset
+        progressRing.anchoredPosition = ToLocal(screenPosition);     // ring over the element center
+    }
+
     // Removes pinch visuals.
     void ClearPinch()
     {
@@ -121,7 +139,7 @@ public class HandCursor : MonoBehaviour
         lipstickGlow.alpha = _pinching ? 1f : 0f;    // #lipstick-cursor.pinching
         pinchCursorGlow.alpha = _pinching ? 1f : 0f; // #pinch-cursor.pinching
 
-        float ringTarget = _ringActive ? 1f : 0f;                                                   // desired opacity
+        float ringTarget = _ringActive || _dwellActive ? 1f : 0f;                                   // desired opacity
         progressGroup.alpha = Mathf.MoveTowards(progressGroup.alpha, ringTarget, Time.unscaledDeltaTime / ringFadeSeconds); // 0.2s fade
 
         float sincePop = Time.unscaledTime - _popStart;                    // pop timeline

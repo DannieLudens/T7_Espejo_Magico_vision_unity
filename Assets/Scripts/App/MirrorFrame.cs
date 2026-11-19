@@ -31,9 +31,12 @@ public class MirrorFrame : MonoBehaviour
     readonly List<Bulb> _bulbs = new List<Bulb>();  // all bulbs, any order
     readonly List<Bulb> _byWave = new List<Bulb>(); // bulbs sorted by perimeter position (data-wave-pos)
 
+    public static MirrorFrame Instance { get; private set; } // screens trigger flashes outside of pinches (dwell, clicks)
+
     // Creates the three rails and their bulbs (web initMirrorFrame).
     void Awake()
     {
+        Instance = this; // single frame in Main.unity
         var left = Rail("BulbsLeft", new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(frameWidth, 0f), new Vector2(frameWidth * 0.5f, 0f));  // left edge, full height
         var top = Rail("BulbsTop", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(-frameWidth * 2f, frameWidth), new Vector2(0f, -frameWidth * 0.5f)); // between the sides
         var right = Rail("BulbsRight", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(frameWidth, 0f), new Vector2(-frameWidth * 0.5f, 0f)); // right edge, full height

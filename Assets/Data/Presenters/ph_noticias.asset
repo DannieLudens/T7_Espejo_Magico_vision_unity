@@ -23,3 +23,45 @@ MonoBehaviour:
   introAudio: {fileID: 8300000, guid: 115ac7d2eed94a74694d2f6c95349714, type: 3}
   cardCharacterHeight: 1.72
   cardCharacterAnchorX: 0.5
+  idleVideos:
+  - Videos_Definitivos/Presentador_De_Noticias/Idles/PH_Noticias 1.mp4
+  - Videos_Definitivos/Presentador_De_Noticias/Idles/PH_Noticias 2.mp4
+  - Videos_Definitivos/Presentador_De_Noticias/Idles/PH_Noticias 3.mp4
+  scenes:
+  - videos:
+    - Videos_Definitivos/Presentador_De_Noticias/Escena1.mp4
+    - Videos_Definitivos/Presentador_De_Noticias/Escena2.mp4
+    audios:
+    - {fileID: 8300000, guid: 941516b562e62c247ab69a0a1564308b, type: 3}
+    hasCheckpoint: 1
+    objectVideo: videos/Prototipo/Objetos/Box_base.mp4
+    hint: "Muestra la base de maquillaje a la c\xE1mara"
+    detectLabels:
+    - BaseDeMaquillaje
+  - videos:
+    - Videos_Definitivos/Presentador_De_Noticias/Escena5.mp4
+    - Videos_Definitivos/Presentador_De_Noticias/Escena4.mp4
+    audios:
+    - {fileID: 8300000, guid: 926e5d2824e054d48acc5aad886801ef, type: 3}
+    hasCheckpoint: 1
+    objectVideo: videos/Prototipo/Objetos/Box_rubor.mp4
+    hint: "Muestra el rubor a la c\xE1mara"
+    detectLabels:
+    - PolvoDeMaquillaje
+  - videos:
+    - Videos_Definitivos/Presentador_De_Noticias/Escena3.mp4
+    audios:
+    - {fileID: 8300000, guid: 3a00360c6e795ac41bf4b420ca9e9818, type: 3}
+    hasCheckpoint: 1
+    objectVideo: videos/Prototipo/Objetos/Box_labial.mp4
+    hint: "Muestra el labial a la c\xE1mara"
+    detectLabels:
+    - Labial
+  - videos:
+    - Videos_Definitivos/Presentador_De_Noticias/Escena6.mp4
+    audios:
+    - {fileID: 8300000, guid: 7d6fcf650b463b945a326a18e66e2b7e, type: 3}
+    hasCheckpoint: 0
+    objectVideo: 
+    hint: 
+    detectLabels: []
