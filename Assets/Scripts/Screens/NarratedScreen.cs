@@ -15,6 +15,7 @@ public class NarratedScreen : ScreenController, IPointerClickHandler
     float _enteredAt;     // time this visit started
     float _audioAt = -1f; // pending voice start, -1 = none
     bool _leaving;        // transition already requested
+    protected bool FallbackArmed; // the safety timeout still applies (cleared when a subclass handles the end itself)
 
     // Schedules the voice, or leaves right away when there is nothing to play.
     public override void OnEnter(AppState state)
@@ -22,6 +23,7 @@ public class NarratedScreen : ScreenController, IPointerClickHandler
         if (_track == null) _track = new VoiceTrack(voice);           // created on first use
         _enteredAt = Time.unscaledTime;                              // start of the fallback timer
         _leaving = false;                                            // fresh visit
+        FallbackArmed = true;                                        // setTimeout(fallback)
         _audioAt = ClipForVisit() != null ? _enteredAt + audioDelay : -1f; // setTimeout(audioDelay)
         if (_audioAt < 0f) Leave();                                  // web: no audio -> transition immediately
     }
@@ -52,10 +54,10 @@ public class NarratedScreen : ScreenController, IPointerClickHandler
         }
         else if (_track.Tick())                                  // audioEl.onended (or blocked audio)
         {
-            Leave();                                             // _doIntroTransition / _doOutroTransition
+            OnVoiceEnded();                                      // _doIntroTransition / _doOutroTransition
         }
 
-        if (now - _enteredAt >= fallbackSeconds) Leave();        // fallback timer
+        if (FallbackArmed && now - _enteredAt >= fallbackSeconds) Leave(); // fallback timer
     }
 
     // Mouse click anywhere on the screen skips it (web scene click listener).
@@ -64,8 +66,14 @@ public class NarratedScreen : ScreenController, IPointerClickHandler
         Leave(); // skip
     }
 
+    // The voice finished or could not play; by default the screen moves on right away.
+    protected virtual void OnVoiceEnded()
+    {
+        Leave(); // transition to nextState
+    }
+
     // Requests the next state once.
-    void Leave()
+    protected void Leave()
     {
         if (_leaving) return;                            // only once per visit
         _leaving = true;                                 // lock

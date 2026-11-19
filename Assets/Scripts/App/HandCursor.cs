@@ -31,6 +31,7 @@ public class HandCursor : MonoBehaviour
     bool _ringActive;                                        // ring should be visible
     float _popStart = -10f;                                  // time of the last pop
     bool _popOnPinchCursor;                                  // which cursor pops
+    CanvasGroup _layer;                                      // whole-layer visibility (mirror mode)
     PointerEventData _pointer;                               // reused raycast query
     readonly List<RaycastResult> _hits = new List<RaycastResult>(); // reused raycast results
 
@@ -117,6 +118,16 @@ public class HandCursor : MonoBehaviour
         _dwellActive = true;                                         // .active
         progressFill.fillAmount = progress;                          // stroke-dashoffset
         progressRing.anchoredPosition = ToLocal(screenPosition);     // ring over the element center
+    }
+
+    // Hides every cursor while a scene asks for it (body.mirror-mode #lipstick-cursor { display: none }); tracking keeps running.
+    public void SetSuppressed(bool suppressed)
+    {
+        if (_layer == null) _layer = GetComponent<CanvasGroup>();                // cached group
+        if (_layer == null) _layer = gameObject.AddComponent<CanvasGroup>();     // created on first use
+        _layer.alpha = suppressed ? 0f : 1f;                                     // display: none / visible
+        _layer.blocksRaycasts = false;                                           // cursors never take clicks
+        _layer.interactable = false;
     }
 
     // Removes pinch visuals.
