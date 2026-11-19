@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ccbb0e407fbca348850a0b4d62caca2, type: 3}
+  m_Name: ph_noticias
+  m_EditorClassIdentifier: Assembly-CSharp::PresenterDefinition
+  id: ph_noticias
+  label: 'Presentador
+
+    de Noticias'
+  character: {fileID: 21300000, guid: c88b567644747714181b85ecbed7e5a6, type: 3}
+  background: {fileID: 21300000, guid: 1f51a28085576f548a8e7eafd67295f9, type: 3}
+  finalBackground: {fileID: 21300000, guid: a5675796c36d07c488bb60d40387326d, type: 3}
+  accentColor: {r: 0.35686275, g: 0.72156864, b: 0.9607843, a: 1}
+  cardCharacterHeight: 1.72
+  cardCharacterAnchorX: 0.5

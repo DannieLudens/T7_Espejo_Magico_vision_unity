@@ -1,34 +1,44 @@
-using UnityEngine;    // MonoBehaviour, RectTransform, Vector2, Mathf
-using UnityEngine.UI; // Image
+using System.Collections.Generic; // List
+using UnityEngine;                // MonoBehaviour, RectTransform, Vector2, Mathf
+using UnityEngine.EventSystems;   // EventSystem, PointerEventData, RaycastResult
+using UnityEngine.UI;             // Image
 
-// Finger-driven lipstick cursor and pinch progress ring (port of js/cursor.js).
-// Hidden until the first hand is detected; the mouse never moves it.
+// Finger-driven dual cursor and pinch progress ring (port of js/cursor.js).
+// Lipstick by default, 👌 over actionable elements; hidden until the first hand is detected.
 public class HandCursor : MonoBehaviour
 {
     [SerializeField] RectTransform lipstick;              // lipstick image, pivot at its top-left tip (hotspot)
     [SerializeField] CanvasGroup lipstickGlow;            // gold drop-shadow shown while pinching
+    [SerializeField] RectTransform pinchCursor;           // 👌 centered on the finger (interactive mode)
+    [SerializeField] CanvasGroup pinchCursorGlow;         // gold drop-shadow of the 👌 while pinching
     [SerializeField] RectTransform progressRing;          // ring root, centered on the finger
     [SerializeField] Image progressFill;                  // radial filled stroke
     [SerializeField] CanvasGroup progressGroup;           // ring opacity
     [SerializeField, Range(0f, 1f)] float follow = 0.55f; // _CUR_LERP: fast lerp toward the tracker position
     [SerializeField] float ringFadeSeconds = 0.2f;        // #pinch-progress transition: opacity 0.2s
-    [SerializeField] float popScale = 1.35f;              // #lipstick-cursor.pop scale
     [SerializeField] float popGrowSeconds = 0.2f;         // pop transition duration
-    [SerializeField] float popHoldSeconds = 0.3f;         // class removed after 300 ms
+    [SerializeField] float popHoldSeconds = 0.3f;         // .pop removed after 300 ms
 
-    RectTransform _root;                         // full-screen parent used for coordinate conversion
-    Vector2 _target = new Vector2(-300f, -300f); // latest finger position (local)
-    Vector2 _current = new Vector2(-300f, -300f);// rendered position (local)
-    bool _handSeen;                              // false until the first handMove
-    bool _ringActive;                            // ring should be visible
-    float _popStart = -10f;                      // time of the last pop
+    RectTransform _root;                                     // full-screen parent used for coordinate conversion
+    Vector2 _target = new Vector2(-300f, -300f);             // latest finger position (local)
+    Vector2 _current = new Vector2(-300f, -300f);            // rendered position (local)
+    bool _handSeen;                                          // false until the first handMove
+    bool _interactive;                                       // finger over a HandInteractable
+    bool _pinching;                                          // pinch held (.pinching)
+    bool _ringActive;                                        // ring should be visible
+    float _popStart = -10f;                                  // time of the last pop
+    bool _popOnPinchCursor;                                  // which cursor pops
+    PointerEventData _pointer;                               // reused raycast query
+    readonly List<RaycastResult> _hits = new List<RaycastResult>(); // reused raycast results
 
     // Caches the root rect and hides everything until a hand appears.
     void Awake()
     {
         _root = (RectTransform)transform;           // cursor layer covers the whole screen
         lipstick.gameObject.SetActive(false);       // visibility: hidden
+        pinchCursor.gameObject.SetActive(false);    // visibility: hidden
         lipstickGlow.alpha = 0f;                    // no pinch glow yet
+        pinchCursorGlow.alpha = 0f;                 // no pinch glow yet
         progressGroup.alpha = 0f;                   // ring hidden
         progressFill.fillAmount = 0f;               // empty ring
     }
@@ -56,16 +66,16 @@ public class HandCursor : MonoBehaviour
     // Stores the new target and reveals the cursor on the first detection.
     void OnHandMoved(Vector2 screenPosition)
     {
-        _target = ToLocal(screenPosition);                 // web _curTargetX/Y
-        if (_handSeen) return;                             // already visible
-        _handSeen = true;                                  // first detection
-        lipstick.gameObject.SetActive(true);               // visibility: visible
+        _target = ToLocal(screenPosition);  // web _curTargetX/Y
+        if (_handSeen) return;              // already visible
+        _handSeen = true;                   // first detection
+        ApplyMode();                        // show the lipstick
     }
 
     // Pinch started: glow on, empty ring visible.
     void OnPinchStarted(Vector2 screenPosition)
     {
-        lipstickGlow.alpha = 1f;          // .pinching drop-shadow
+        _pinching = true;                 // .pinching
         _ringActive = true;               // .active
         progressFill.fillAmount = 0f;     // _curSetProgress(0)
     }
@@ -73,15 +83,16 @@ public class HandCursor : MonoBehaviour
     // Pinch held: fill and move the ring.
     void OnPinchProgress(Vector2 screenPosition, float progress)
     {
-        progressFill.fillAmount = progress;                   // stroke-dashoffset
+        progressFill.fillAmount = progress;                      // stroke-dashoffset
         progressRing.anchoredPosition = ToLocal(screenPosition); // ring centered on the finger
     }
 
-    // Pinch confirmed: hide ring and play the pop animation.
+    // Pinch confirmed: hide ring and pop the visible cursor.
     void OnPinchConfirmed(Vector2 screenPosition)
     {
-        ClearPinch();                      // same cleanup as pinchEnd
-        _popStart = Time.unscaledTime;     // _curPopAnimation
+        ClearPinch();                     // same cleanup as pinchEnd
+        _popStart = Time.unscaledTime;    // _curPopAnimation
+        _popOnPinchCursor = _interactive; // pop whichever cursor is visible
     }
 
     // Pinch released early: hide ring.
@@ -93,25 +104,56 @@ public class HandCursor : MonoBehaviour
     // Removes pinch visuals.
     void ClearPinch()
     {
-        lipstickGlow.alpha = 0f;       // no glow
+        _pinching = false;             // no glow
         _ringActive = false;           // fade ring out
         progressFill.fillAmount = 0f;  // empty ring
     }
 
-    // Moves the cursor, fades the ring and runs the pop scale.
+    // Moves the cursors, detects interactive elements, fades the ring and runs the pop.
     void Update()
     {
         _current += (_target - _current) * follow;   // web tick(): fast lerp each frame
         lipstick.anchoredPosition = _current;        // tip follows the finger
+        pinchCursor.anchoredPosition = _current;     // 👌 centered on the finger
+
+        if (_handSeen) UpdateInteractive();          // web _curUpdateInteractive
+
+        lipstickGlow.alpha = _pinching ? 1f : 0f;    // #lipstick-cursor.pinching
+        pinchCursorGlow.alpha = _pinching ? 1f : 0f; // #pinch-cursor.pinching
 
         float ringTarget = _ringActive ? 1f : 0f;                                                   // desired opacity
         progressGroup.alpha = Mathf.MoveTowards(progressGroup.alpha, ringTarget, Time.unscaledDeltaTime / ringFadeSeconds); // 0.2s fade
 
-        float sincePop = Time.unscaledTime - _popStart;                                             // pop timeline
-        float scale = 1f;                                                                           // default size
-        if (sincePop >= 0f && sincePop < popHoldSeconds)                                            // .pop applied
-            scale = Mathf.LerpUnclamped(1f, popScale, CssEasing.BackOut(Mathf.Clamp01(sincePop / popGrowSeconds))); // grow with overshoot
-        lipstick.localScale = new Vector3(scale, scale, 1f);                                        // snaps back when .pop is removed
+        float sincePop = Time.unscaledTime - _popStart;                    // pop timeline
+        bool popping = sincePop >= 0f && sincePop < popHoldSeconds;        // .pop applied
+        float grow = CssEasing.BackOut(Mathf.Clamp01(sincePop / popGrowSeconds)); // transform transition curve
+        float lipstickScale = popping && !_popOnPinchCursor ? Mathf.LerpUnclamped(1f, 1.35f, grow) : 1f; // #lipstick-cursor.pop
+        float pinchBase = _pinching ? 0.85f : 1f;                                                       // #pinch-cursor.pinching
+        float pinchScale = popping && _popOnPinchCursor ? Mathf.LerpUnclamped(pinchBase, 1.4f, grow) : pinchBase; // #pinch-cursor.pop
+        lipstick.localScale = new Vector3(lipstickScale, lipstickScale, 1f);   // scale from the tip
+        pinchCursor.localScale = new Vector3(pinchScale, pinchScale, 1f);      // scale from the center
+    }
+
+    // Checks the topmost UI element under the finger (web document.elementFromPoint + closest()).
+    void UpdateInteractive()
+    {
+        var events = EventSystem.current;                          // UI raycast entry point
+        if (events == null) return;                                // no EventSystem in the scene
+        if (_pointer == null) _pointer = new PointerEventData(events); // created once
+        _pointer.position = RectTransformUtility.WorldToScreenPoint(null, _root.TransformPoint(_current)); // cursor in screen pixels
+        _hits.Clear();                                             // reuse buffer
+        events.RaycastAll(_pointer, _hits);                        // sorted top to bottom
+        bool now = _hits.Count > 0 && _hits[0].gameObject.GetComponentInParent<HandInteractable>() != null; // topmost element is actionable
+        if (now == _interactive) return;                           // no change
+        _interactive = now;                                        // _curSetInteractive
+        ApplyMode();                                               // swap cursors
+    }
+
+    // Shows the lipstick or the 👌 depending on the interactive mode.
+    void ApplyMode()
+    {
+        lipstick.gameObject.SetActive(_handSeen && !_interactive);  // normal mode
+        pinchCursor.gameObject.SetActive(_handSeen && _interactive); // pointer mode
     }
 
     // Converts a screen point into the cursor layer's local coordinates.
