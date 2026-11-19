@@ -4,7 +4,8 @@ using UnityEngine.InputSystem;   // Keyboard
 
 // Operator keyboard shortcuts of the web keydown handlers (js/app.js and js/captions.js):
 // V audio panel, G card glass panel (menu only), C captions (plus the ripple panel in the mirror),
-// ` system cursor. The mouse pointer is hidden like body { cursor: none } until ` restores it.
+// ` operator mode. Unlike the web (body { cursor: none }), the OS pointer always stays visible;
+// ` only reveals the hidden operator controls such as the standby mirror button.
 public class OperatorControls : MonoBehaviour
 {
     [SerializeField] AppStateMachine machine;   // current state
@@ -12,15 +13,15 @@ public class OperatorControls : MonoBehaviour
     [SerializeField] OperatorPanel glassPanel;  // #glass-panel
     [SerializeField] MirrorScreen mirrorScreen; // owns #mirror-config
 
-    public static bool SystemCursor { get; private set; }   // body.system-cursor
+    public static bool SystemCursor { get; private set; }   // body.system-cursor (operator mode)
     public static event Action SystemCursorChanged;         // the standby mirror button reacts
 
     bool _backquoteTyped; // '`' arrived as text input this frame (dead-key layouts)
 
-    // Hides the OS pointer like cursor: none.
+    // Keeps the OS pointer visible (project decision: the web hides it with cursor: none).
     void Start()
     {
-        ApplyCursor(); // initial state
+        Cursor.visible = true; // never hidden
     }
 
     // Listens to typed characters so ` works on layouts where it is a dead key.
@@ -53,8 +54,7 @@ public class OperatorControls : MonoBehaviour
         if (backquote)                                                         // Tecla ` → cursor del sistema
         {
             SystemCursor = !SystemCursor;                                      // classList.toggle('system-cursor')
-            ApplyCursor();
-            SystemCursorChanged?.Invoke();
+            SystemCursorChanged?.Invoke();                                     // reveal / hide operator controls
         }
         if (keyboard.vKey.wasPressedThisFrame) soundPanel.Toggle();            // Tecla V → panel de audio
         if (keyboard.gKey.wasPressedThisFrame && machine.Current == AppState.Menu) glassPanel.Toggle(); // Tecla G (menú)
@@ -63,11 +63,5 @@ public class OperatorControls : MonoBehaviour
             Captions.Toggle();                                                 // captions.js
             if (machine.Current == AppState.Mirror) mirrorScreen.ToggleConfig(); // app.js ripple panel
         }
-    }
-
-    // Shows or hides the OS pointer.
-    static void ApplyCursor()
-    {
-        Cursor.visible = SystemCursor; // cursor: auto / none
     }
 }
