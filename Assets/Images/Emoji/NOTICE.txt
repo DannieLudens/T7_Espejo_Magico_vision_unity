@@ -1,3 +1,10 @@
-emoji_u1f44c_ok_hand.png
-Rendered from Noto Color Emoji (Google), U+1F44C "OK hand".
-Font license: SIL Open Font License 1.1 - https://github.com/googlefonts/noto-emoji
+Emoji images rendered from Noto Color Emoji (Google):
+  emoji_u1f44c_ok_hand.png       U+1F44C "OK hand"
+  emoji_u1f484_lipstick.png      U+1F484 "lipstick"
+  emoji_u1f4f7_camera.png        U+1F4F7 "camera"
+  emoji_u1f4f8_camera_flash.png  U+1F4F8 "camera with flash"
+  emoji_u2728_sparkles.png       U+2728  "sparkles"
+  emoji_u1f4f1_mobile_phone.png  U+1F4F1 "mobile phone"
+Glyph rendered from Noto Sans Math (Google):
+  glyph_u21a9_return_arrow.png   U+21A9  "leftwards arrow with hook"
+Font license: SIL Open Font License 1.1 - https://github.com/googlefonts/noto-emoji , https://github.com/notofonts/math

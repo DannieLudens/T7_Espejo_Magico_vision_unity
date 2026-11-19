@@ -12,6 +12,7 @@ public class PresenterDefinition : ScriptableObject
     public Sprite finalBackground;           // fondoFinal: used by intro and final screens
     public Color accentColor = Color.white;  // accentColor
     public AudioClip introAudio;             // introAudio: voice played on the Intro screen
+    public CtaAlign ctaAlign = CtaAlign.Center; // ctaAlign: side of the Final screen buttons (away from the character)
 
     [Header("Menu card framing (per-presenter CSS overrides)")]
     [Tooltip("background-size: auto X% -> character height as a fraction of the card height")]
@@ -39,6 +40,9 @@ public class PresenterDefinition : ScriptableObject
         return idleVideos.Length > 0 ? idleVideos[idleVideos.Length - 1] : null; // idleVideos.slice(-1)[0]
     }
 }
+
+// Horizontal placement of the Final screen call to action (web data-cta-align).
+public enum CtaAlign { Center, Left, Right }
 
 // One scene of a presenter's experience (web scenes[] entry).
 [Serializable]
