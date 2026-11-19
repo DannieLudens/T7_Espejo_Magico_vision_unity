@@ -35,6 +35,10 @@ public class ExperienceScreen : ScreenController
     [SerializeField] Image cameraBorder;             // camera border
     [SerializeField] TMP_Text idleHint;              // #exp-idle-hint
     [SerializeField] CanvasGroup detectionFeedback;  // #det-feedback (hidden while the detector is idle)
+    [SerializeField] TMP_Text detectionLabel;        // #det-label
+    [SerializeField] GameObject detectionCheck;      // ✓ drawn before the label (fonts have no U+2713)
+    [SerializeField] RectTransform holdFill;         // #det-hold-fill (anchorMax.x = progress)
+    [SerializeField] Image cameraGlow;               // .det-detected box-shadow
 
     const float SceneFadeWait = 0.32f;   // setTimeout(startVideo, 320)
     const float DwellSeconds = 1.5f;     // _DWELL_MS
@@ -58,6 +62,10 @@ public class ExperienceScreen : ScreenController
     CssTransition _fillValue;            // #exp-progress-fill transition: width 0.3s linear
     CssTransition _backScale;            // #exp-back-btn transition: transform 0.18s
     float _backVisual;                   // 0 rest, 1 near, 2 dwelling (colors)
+    CssTransition _feedbackAlpha;        // #det-feedback opacity (0.3s fade-in, instant hide)
+    float _holdTarget, _holdValue;       // #det-hold-fill width with transition 0.12s linear
+    bool _objectDetected;                // .det-detected on the camera tile
+    float _cameraDetect;                 // animated 0..1 for the green border/glow
 
     // Creates transitions and hooks the main video's end event.
     void Awake()
@@ -66,6 +74,7 @@ public class ExperienceScreen : ScreenController
         _fillValue = new CssTransition(0f, 0.3f, null);           // linear progress width
         _backScale = new CssTransition(1f, 0.18f, CssEasing.Ease); // back button scale
         _voiceTrack = new VoiceTrack(voice);                       // waits for first-use clip loads
+        _feedbackAlpha = new CssTransition(0f, 0.3f, CssEasing.Ease); // detection widget fade
         mainVideo.Finished += OnClipFinished;                      // videoEl.onended
         progressFill.GetComponent<Image>().sprite = ProceduralSprites.LinearGradient("expProgress", 64, 4, 90f, new[]
         {
@@ -89,6 +98,7 @@ public class ExperienceScreen : ScreenController
         idleOverlay.blocksRaycasts = false;
         _fadeAlpha.Snap(0f);                                                  // no fade on the first scene
         _fillValue.Snap(0f);                                                  // empty bar
+        _feedbackAlpha.Snap(0f);                                              // detection widget hidden
         BuildDots();                                                          // _buildExpDots
         PlayScene(_sceneIndex);                                               // first scene
     }
@@ -210,13 +220,76 @@ public class ExperienceScreen : ScreenController
         if (!string.IsNullOrEmpty(scene.objectVideo)) objectVideo.Play(scene.objectVideo, true); // 360° object
         else objectVideo.Stop();                                       // display: none
         AttachCamera();                                                // srcObject = webcam stream
-        detectionFeedback.alpha = 0f;                                  // detector not available yet (data-status idle)
+        ResetDetectionFeedback();                                      // label, bar and border at rest
+        var recognizer = ObjectRecognizer.Instance;                    // loaded at startup
+        if (recognizer != null) recognizer.Begin(scene.detectLabels, OnObjectConfirmed); // startDetecting (no-op without model)
+    }
+
+    // The detector confirmed the requested object (web onDetected callback).
+    void OnObjectConfirmed()
+    {
+        if (_idleMode) ExitIdle(); // if (_isIdleMode) _exitIdleMode()
+    }
+
+    // Puts the detection widget back to its initial text and empty bar.
+    void ResetDetectionFeedback()
+    {
+        detectionLabel.text = "Acerca el objeto a la cámara"; // initial #det-label
+        detectionCheck.SetActive(false);                      // no ✓
+        _holdTarget = _holdValue = 0f;                         // empty bar
+        _objectDetected = false;                               // neutral camera border
+    }
+
+    // Subscribes to the recognizer while the screen is visible.
+    protected override void OnEnable()
+    {
+        base.OnEnable();                                          // gesture hooks
+        var recognizer = ObjectRecognizer.Instance;               // persistent system
+        if (recognizer == null) return;                           // not created yet at scene load
+        recognizer.StatusChanged += OnDetectorStatus;             // data-status
+        recognizer.Prediction += OnDetectorPrediction;            // _detUpdateUI
+        recognizer.HoldProgress += OnDetectorHold;                // _detSetHoldProgress
+    }
+
+    // Unsubscribes from the recognizer.
+    protected override void OnDisable()
+    {
+        base.OnDisable();                                         // gesture hooks
+        var recognizer = ObjectRecognizer.Instance;
+        if (recognizer == null) return;
+        recognizer.StatusChanged -= OnDetectorStatus;
+        recognizer.Prediction -= OnDetectorPrediction;
+        recognizer.HoldProgress -= OnDetectorHold;
+    }
+
+    // Shows the widget while scanning/confirmed, hides it instantly when idle.
+    void OnDetectorStatus(ObjectRecognizer.Status status)
+    {
+        if (status == ObjectRecognizer.Status.Idle) _feedbackAlpha.Snap(0f);  // [data-status="idle"] { opacity: 0 }
+        else _feedbackAlpha.SetTarget(1f, Time.unscaledTime);                 // transition: opacity 0.3s
+    }
+
+    // Updates the label and the camera border from the best prediction.
+    void OnDetectorPrediction(string label, bool detected)
+    {
+        if (detected) detectionLabel.text = "¡Objeto detectado! Mantén quieto…";   // preceded by the drawn ✓
+        else if (label == "Ninguno") detectionLabel.text = "Acerca el objeto a la cámara"; // nothing in front
+        else detectionLabel.text = "Buscando…";                                     // another object
+        detectionCheck.SetActive(detected);                                         // ✓
+        _objectDetected = detected;                                                 // .det-detected
+    }
+
+    // Stores the hold progress for the bar.
+    void OnDetectorHold(float progress)
+    {
+        _holdTarget = progress; // width: X%
     }
 
     // Leaves the checkpoint and plays the next scene, or ends in the Outro (web _exitIdleMode).
     void ExitIdle()
     {
         _idleMode = false;                                          // _isIdleMode = false
+        ObjectRecognizer.Instance?.End();                           // stopDetecting()
         HideOverlay();                                              // overlay hidden, object video stopped
         _sceneIndex++;                                              // next scene
         if (_sceneIndex < _presenter.scenes.Length) PlayScene(_sceneIndex);
@@ -259,6 +332,7 @@ public class ExperienceScreen : ScreenController
     void StopMedia()
     {
         if (_pending != null) { StopCoroutine(_pending); _pending = null; } // cancel delayed starts
+        ObjectRecognizer.Instance?.End();                                   // stopDetecting()
         mainVideo.Stop();                                                   // videoEl.pause(); src = ''
         StopVoice();                                                        // audioEl.pause()
         _videoEnded = _audioEnded = false;                                  // reset flags
@@ -482,5 +556,13 @@ public class ExperienceScreen : ScreenController
         float pulse = CssEasing.PingPong(now, 2.5f);                                           // objectPulse
         var dimmed = new Color(AppTheme.Gold.r, AppTheme.Gold.g, AppTheme.Gold.b, 0.35f);      // --gold-dimmed
         objectBorder.color = Color.Lerp(dimmed, AppTheme.Gold, pulse);                         // border-color
+
+        detectionFeedback.alpha = _feedbackAlpha.Evaluate(now);                                // #det-feedback opacity
+        _holdValue = Mathf.MoveTowards(_holdValue, _holdTarget, Time.unscaledDeltaTime / 0.12f); // width 0.12s linear
+        holdFill.anchorMax = new Vector2(_holdValue, 1f);                                      // #det-hold-fill
+        _cameraDetect = Mathf.MoveTowards(_cameraDetect, _objectDetected ? 1f : 0f, Time.unscaledDeltaTime / 0.2f); // 0.2s
+        var green = new Color(61f / 255f, 190f / 255f, 130f / 255f, 1f);                       // #3DBE82
+        cameraBorder.color = Color.Lerp(new Color(1f, 1f, 1f, 0.18f), green, _cameraDetect);   // .det-detected border
+        cameraGlow.color = new Color(green.r, green.g, green.b, 0.65f * _cameraDetect);        // 0 0 14px rgba(61,190,130,0.65)
     }
 }
