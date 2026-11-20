@@ -1,6 +1,9 @@
-using System.Collections; // IEnumerator
-using UnityEngine;        // AudioSource, AudioClip, Mathf, Time
-using UnityEngine.UI;     // Image
+using System.Collections;          // IEnumerator
+using System.Collections.Generic;  // List
+using UnityEngine;                 // AudioSource, AudioClip, Mathf, Time
+using UnityEngine.EventSystems;    // EventSystem, PointerEventData, RaycastResult
+using UnityEngine.InputSystem;     // Mouse
+using UnityEngine.UI;              // Image
 
 // Presenter selection menu (port of _setupMenu, _updatePresenterHover, _getCardAt and the MENU pinch handlers).
 public class MenuScreen : ScreenController
@@ -108,13 +111,41 @@ public class MenuScreen : ScreenController
     // Picks the presenter under the finger and opens the intro after the flash (web _onPinchConfirmed, MENU).
     protected override void OnPinchConfirmed(Vector2 screenPosition)
     {
-        if (_selected) return;                                   // already transitioning
-        var card = CardAt(screenPosition);                       // _getCardAt
-        if (card == null) return;                                // pinch outside the cards does nothing
+        Pick(CardAt(screenPosition)); // the frame flashes on every pinch by itself
+    }
+
+    // Mouse click on a card does the same as a pinch (web card click listener, also used by the guide).
+    void HandleMouseClick()
+    {
+        var mouse = Mouse.current;                                         // null without a mouse
+        if (mouse == null || !mouse.leftButton.wasPressedThisFrame) return;
+        Vector2 point = mouse.position.ReadValue();                        // screen pixels
+        if (OverOperatorPanel(point)) return;                              // clicks on the V / G panels stay there
+        var card = CardAt(point);
+        if (card == null || _selected) return;
+        if (MirrorFrame.Instance != null) MirrorFrame.Instance.TriggerSelectionFlash(); // triggerSelectionFlash()
+        Pick(card);
+    }
+
+    // Starts the chosen presenter's intro once (shared by pinch and click).
+    void Pick(PresenterCard card)
+    {
+        if (_selected || card == null) return;                   // already transitioning / nothing under the pointer
         _selected = true;                                        // block double picks
         ClearSelecting();                                        // _clearPinchBars
         AppSession.ActivePresenter = card.Presenter;             // _activePresenter
         StartCoroutine(OpenIntroAfterFlash());                   // setTimeout(..., 900)
+    }
+
+    // True when the pointer is over an open operator panel (sound or glass), which keeps its own clicks.
+    static bool OverOperatorPanel(Vector2 point)
+    {
+        if (EventSystem.current == null) return false;
+        var hits = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current) { position = point }, hits);
+        foreach (var hit in hits)
+            if (hit.gameObject.GetComponentInParent<OperatorPanel>() != null) return true;
+        return false;
     }
 
     // Waits for the bulb flash, then transitions to the intro.
@@ -138,9 +169,10 @@ public class MenuScreen : ScreenController
         foreach (var card in cards) card.SetSelecting(false); // no ring pulse
     }
 
-    // Plays the one-time instruction and animates the background opacity.
+    // Plays the one-time instruction, handles mouse picks and animates the background opacity.
     void Update()
     {
+        HandleMouseClick();                                              // guide / testing shortcut
         if (_instructionAt >= 0f && Time.unscaledTime >= _instructionAt) // timer elapsed
         {
             _instructionAt = -1f;                      // _menuInstructionTimer = null
