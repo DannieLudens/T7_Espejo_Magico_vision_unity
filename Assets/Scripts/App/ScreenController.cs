@@ -27,6 +27,10 @@ public class ScreenController : MonoBehaviour
     // Called right before the screen is hidden or switches to another of its states.
     public virtual void OnExit(AppState state) { }
 
+    // True while the screen waits for the visitor with no end of its own (the machine sends the kiosk back to
+    // the mirror after a while without interaction). Screens that play to the end or time out themselves say no.
+    public virtual bool WaitsForVisitor(AppState state) { return false; }
+
     // Transitions as soon as the state machine is free; automatic exits can fire while a fade is still running.
     protected IEnumerator TransitionWhenIdle(AppState next)
     {

@@ -26,6 +26,9 @@ public class StandbyScreen : ScreenController
     bool _handShown;            // indicator already revealed in this visit
     float _shownAt;             // time the indicator popped in
 
+    // Standby waits for a hand with no time limit.
+    public override bool WaitsForVisitor(AppState state) { return true; }
+
     // Resets the hint, shows credits, starts video and music.
     public override void OnEnter(AppState state)
     {

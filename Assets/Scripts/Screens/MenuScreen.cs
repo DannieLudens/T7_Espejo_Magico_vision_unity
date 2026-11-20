@@ -24,6 +24,9 @@ public class MenuScreen : ScreenController
         _backgroundOpacity = new CssTransition(0f, 0.55f, CssEasing.Ease); // #menu-bg transition
     }
 
+    // The menu waits for a presenter choice with no time limit.
+    public override bool WaitsForVisitor(AppState state) { return true; }
+
     // Builds the card entrance once per session and schedules the voice instruction.
     public override void OnEnter(AppState state)
     {

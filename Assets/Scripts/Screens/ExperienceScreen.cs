@@ -83,6 +83,9 @@ public class ExperienceScreen : ScreenController
         });
     }
 
+    // Only the idle checkpoints wait (for the object); the scene videos play to the end on their own.
+    public override bool WaitsForVisitor(AppState state) { return _idleMode; }
+
     // Starts the selected presenter's experience from its first scene (web _setupExperience).
     public override void OnEnter(AppState state)
     {

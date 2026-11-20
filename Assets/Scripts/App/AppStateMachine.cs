@@ -9,6 +9,7 @@ public class AppStateMachine : MonoBehaviour
     [SerializeField] AppState initialState = AppState.Mirror;           // state shown at boot (kiosk rests in the mirror)
     [SerializeField] ScreenFader fader;                                  // black overlay between screens
     [SerializeField] ScreenController[] screens = new ScreenController[0]; // every screen instance in the scene
+    [SerializeField] float idleReturnSeconds = 30f;                      // no interaction this long on a waiting screen -> mirror
 
     public AppState Current { get; private set; } = AppState.None; // active state
     public bool IsTransitioning { get; private set; }               // guard against overlapping transitions
@@ -16,6 +17,7 @@ public class AppStateMachine : MonoBehaviour
     public event Action<AppState, AppState> StateChanged; // (previous, next) raised after a transition completes
 
     ScreenController _activeScreen; // screen currently visible
+    float _lastActivity;            // last hand, mouse or key activity (or state change)
 
     // Hides every screen and enters the initial state without fading (web boots straight into standby).
     void Start()
@@ -29,10 +31,33 @@ public class AppStateMachine : MonoBehaviour
         StartCoroutine(Transition(initialState, true)); // immediate first transition
     }
 
-    // Polls operator keyboard shortcuts every frame.
+    // Polls operator keyboard shortcuts and the inactivity return every frame.
     void Update()
     {
         HandleOperatorShortcuts(); // N, M, ESC
+        CheckInactivity();         // abandoned visit -> mirror
+    }
+
+    // Kiosk change (delivery feedback): a visitor who walks away mid-visit leaves the kiosk on a screen that waits
+    // forever, so after idleReturnSeconds without a hand, mouse or key the machine returns to the mirror.
+    void CheckInactivity()
+    {
+        float now = Time.unscaledTime;                                         // real time
+        if (HandGestures.HandVisible || PointerOrKeyActive()) _lastActivity = now; // someone is there
+        if (IsTransitioning || _activeScreen == null) return;                  // wait for the screen to settle
+        if (!_activeScreen.WaitsForVisitor(Current)) { _lastActivity = now; return; } // screen ends on its own
+        if (now - _lastActivity < idleReturnSeconds) return;                   // still within the grace time
+        Debug.Log($"[App] {idleReturnSeconds:0} s sin interacción en {Current} → MIRROR");
+        TransitionTo(AppState.Mirror);                                         // back to the resting screen
+    }
+
+    // True when the mouse moved or any mouse button or key was pressed this frame.
+    static bool PointerOrKeyActive()
+    {
+        var mouse = Mouse.current;                                             // null without a mouse
+        if (mouse != null && (mouse.delta.ReadValue().sqrMagnitude > 0f || mouse.leftButton.isPressed || mouse.rightButton.isPressed)) return true;
+        var keyboard = Keyboard.current;                                       // null without a keyboard
+        return keyboard != null && keyboard.anyKey.wasPressedThisFrame;
     }
 
     // Requests a transition; ignored when already in that state or busy (same rule as the web).
@@ -57,6 +82,7 @@ public class AppStateMachine : MonoBehaviour
         if (_activeScreen != null && !sameScreen) _activeScreen.gameObject.SetActive(false); // hide the old screen
 
         Current = next;             // commit the new state
+        _lastActivity = Time.unscaledTime; // every screen starts with a full grace time
         _activeScreen = nextScreen; // remember the visible screen
         if (_activeScreen != null)
         {

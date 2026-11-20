@@ -32,6 +32,9 @@ public class FinalScreen : ScreenController
     float _enteredAt;                    // time the result mode was shown
     bool _autoReturnRequested;           // timer already fired
 
+    // The photobooth waits for the photo; the result mode (30 s) and the QR (qrDisplayMs) time out themselves.
+    public override bool WaitsForVisitor(AppState state) { return state == AppState.Photobooth; }
+
     // Shows the sub-mode of the state; the result mode is rebuilt for the active presenter.
     public override void OnEnter(AppState state)
     {
