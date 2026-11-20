@@ -4,6 +4,17 @@
     "cloudName": "TU_CLOUD_NAME",
     "uploadPreset": "TU_UPLOAD_PRESET"
   },
+  "snap": {
+    "enabled": true,
+    "apiToken": "TU_SNAP_API_TOKEN",
+    "lensGroupId": "TU_LENS_GROUP_ID",
+    "lensIds": {
+      "p_noticias": "TU_LENS_ID",
+      "ph_noticias": "TU_LENS_ID",
+      "p_cmoda": "TU_LENS_ID",
+      "ph_deportes": "TU_LENS_ID"
+    }
+  },
   "photobooth": {
     "countdownSeconds": 3,
     "photoWidth": 1280,

@@ -11,7 +11,7 @@ public class PhotoboothView : MonoBehaviour
     [Header("Live view (#photobooth-canvas)")]
     [SerializeField] RawImage liveView;            // mirrored webcam
     [SerializeField] RawImage makeupView;          // #photobooth-makeup-canvas (face filter overlay)
-    [SerializeField] MakeupFilter makeup;          // face-filter.js fallback (Snap Camera Kit is web only)
+    [SerializeField] MakeupFilter makeup;          // face-filter.js fallback (Snap Camera Kit runs only in WebGL builds)
 
     [Header("UI (#photobooth-ui)")]
     [SerializeField] CanvasGroup hint;             // #photobooth-hint (hintBlink)
@@ -46,6 +46,8 @@ public class PhotoboothView : MonoBehaviour
     bool _takeNear, _backNear; // .finger-near
     float _popStart = -10f;    // countdownPop start
     Coroutine _captureRoutine; // countdown + capture
+    bool _snapPending;         // waiting for Snap Camera Kit (initSnapFilter + applySnapLens)
+    bool _snapActive;          // setSnapMode(true): the live view shows the Snap canvas
 
     CssTransition _takeScale;  // #btn-take-photo transform 0.15s ease
     CssTransition _ringLevel;  // ring transitions 0.2s: 0 rest, 1 hovered, 2 finger-near
@@ -64,8 +66,20 @@ public class PhotoboothView : MonoBehaviour
     // Shows the camera with the 📷 button and the hint (web _enterPhotoBooth).
     public void Enter()
     {
-        AttachCamera();                                            // drawImage(webcam)
-        StartMakeup();                                             // initFaceFilter + setMakeupPreset
+        var presenter = AppSession.ActivePresenter;                // _activePresenter
+        _snapActive = false;                                       // setSnapMode(false)
+        _snapPending = WebMediaBridge.SnapBegin(presenter != null ? presenter.id : null); // APP_CONFIG.snap.enabled → initSnapFilter
+        if (_snapPending)
+        {
+            liveView.texture = null;                               // the 2D canvas is not drawn while Snap loads
+            liveView.color = Color.clear;
+            makeupView.enabled = false;
+        }
+        else
+        {
+            AttachCamera();                                        // drawImage(webcam)
+            StartMakeup();                                         // initFaceFilter + setMakeupPreset
+        }
 
         takeButton.gameObject.SetActive(true);                     // classList.remove('hidden')
         hint.gameObject.SetActive(true);
@@ -77,6 +91,36 @@ public class PhotoboothView : MonoBehaviour
         _backLevel.Snap(0f);
         _backHover.Snap(0f);
         Debug.Log("[App] Photobooth activo (sin filtro AR todavía)"); // web log
+    }
+
+    // Switches to the Snap canvas when the lens is playing, or to the Face Mesh fallback when Snap failed.
+    void WaitForSnap()
+    {
+        int state = WebMediaBridge.SnapState();                                         // 1 loading, 2 ready, -1 failed
+        if (state == 2 && WebMediaBridge.SnapTexture != null)
+        {
+            _snapPending = false;
+            _snapActive = true;                                                         // setSnapMode(true)
+            ShowSnap();                                                                 // #snap-canvas visible
+            Debug.Log("[App] Photobooth activo con Snap Camera Kit — " + AppSession.ActivePresenter?.id);
+        }
+        else if (state < 0)
+        {
+            _snapPending = false;
+            WebMediaBridge.SnapPause();                                                 // stop copying the canvas
+            Debug.LogWarning("[App] Snap Camera Kit falló, usando Face Mesh como fallback.");
+            AttachCamera();                                                             // startPhotoBoothRender
+            StartMakeup();                                                              // initFaceFilter
+        }
+    }
+
+    // The Snap output is already mirrored (Transform2D.MirrorX), so it is drawn as is.
+    void ShowSnap()
+    {
+        liveView.texture = WebMediaBridge.SnapTexture; // #snap-canvas
+        liveView.color = Color.white;
+        liveView.uvRect = new Rect(0f, 0f, 1f, 1f);    // no extra flip
+        makeupView.enabled = false;                    // photobooth-makeup-canvas hidden
     }
 
     // Shows the shared webcam mirrored; #111 while the camera is not ready (readyState < 2).
@@ -107,6 +151,8 @@ public class PhotoboothView : MonoBehaviour
         _capturing = false;                         // allow a new capture next time
         liveView.texture = null;                    // stop drawing the webcam
         makeup.End();                               // stopFaceFilter()
+        if (_snapPending || _snapActive) WebMediaBridge.SnapPause(); // pauseSnapFilter (keeps the session)
+        _snapPending = _snapActive = false;         // setSnapMode(false)
     }
 
     // ── Hand and mouse input ─────────────────────────────────
@@ -177,7 +223,7 @@ public class PhotoboothView : MonoBehaviour
 
         Texture2D photo = null;                                               // _capturePhoto()
         if (PhotoComposer.Instance != null)
-            yield return PhotoComposer.Instance.Capture(liveView.texture, makeupView.enabled ? makeupView.texture : null, p => photo = p);
+            yield return PhotoComposer.Instance.Capture(liveView.texture, makeupView.enabled ? makeupView.texture : null, p => photo = p, !_snapActive);
         countdown.gameObject.SetActive(false);                                // display.classList.add('hidden')
         _captureRoutine = null;                                               // finished
         _capturing = false;                                                   // finally { _photoCapturing = false }
@@ -197,7 +243,9 @@ public class PhotoboothView : MonoBehaviour
     void Update()
     {
         float now = Time.unscaledTime;                                                  // animation clock
-        if (liveView.texture == null) AttachCamera();                                   // the render loop keeps polling the webcam
+        if (_snapPending) WaitForSnap();                                                // initSnapFilter resolves
+        else if (_snapActive) ShowSnap();                                               // the Snap texture may be recreated
+        else if (liveView.texture == null) AttachCamera();                              // the render loop keeps polling the webcam
         hint.alpha = Mathf.Lerp(0.35f, 1f, CssEasing.PingPong(now, 2.5f));             // hintBlink 2.5s ease-in-out
 
         float popT = Mathf.Clamp01((now - _popStart) / 0.45f);                          // countdownPop 0.45s

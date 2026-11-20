@@ -16,6 +16,38 @@ public class AppConfig
     }
 
     [Serializable]
+    public class SnapSettings
+    {
+        public bool enabled;              // use Snap Camera Kit lenses in the WebGL photobooth
+        public string apiToken = "";      // Camera Kit API token (public once deployed, restricted by Trusted Origins)
+        public string lensGroupId = "";   // Lens Group UUID
+        public LensIds lensIds = new LensIds(); // lens UUID per presenter
+
+        // Lens UUID for a presenter id, or null when missing / placeholder.
+        public string LensFor(string presenterId)
+        {
+            string id = null;
+            switch (presenterId)
+            {
+                case "p_noticias": id = lensIds.p_noticias; break;
+                case "ph_noticias": id = lensIds.ph_noticias; break;
+                case "p_cmoda": id = lensIds.p_cmoda; break;
+                case "ph_deportes": id = lensIds.ph_deportes; break;
+            }
+            return string.IsNullOrEmpty(id) || id.StartsWith("TU_") ? null : id; // web: !lensId || startsWith('TU_')
+        }
+    }
+
+    [Serializable]
+    public class LensIds
+    {
+        public string p_noticias = "";  // Presentadora de Noticias
+        public string ph_noticias = ""; // Presentador de Noticias
+        public string p_cmoda = "";     // Presentadora Colombia Moda
+        public string ph_deportes = ""; // Presentador de Deportes
+    }
+
+    [Serializable]
     public class PhotoboothSettings
     {
         public int countdownSeconds = 3;   // countdown length
@@ -28,6 +60,7 @@ public class AppConfig
     }
 
     public CloudinarySettings cloudinary = new CloudinarySettings(); // APP_CONFIG.cloudinary
+    public SnapSettings snap = new SnapSettings();                   // APP_CONFIG.snap
     public PhotoboothSettings photobooth = new PhotoboothSettings(); // APP_CONFIG.photobooth
 
     public static AppConfig Current { get; private set; } = new AppConfig(); // defaults until the file loads

@@ -35,11 +35,12 @@ public class PhotoComposer : MonoBehaviour
     }
 
     // Draws one frame of the composition and returns it as a readable texture.
-    public IEnumerator Capture(Texture camera, Texture makeup, Action<Texture2D> done)
+    // mirror = false for sources that are already mirrored (the Snap Camera Kit canvas).
+    public IEnumerator Capture(Texture camera, Texture makeup, Action<Texture2D> done, bool mirror = true)
     {
-        cameraImage.texture = camera;                          // live webcam frame
+        cameraImage.texture = camera;                          // live webcam frame (or the Snap canvas)
         cameraImage.color = camera != null ? Color.white : Color.clear; // #111 background when there is no camera
-        cameraImage.uvRect = new Rect(1f, 0f, -1f, 1f);        // horizontal mirror, full frame stretched to 16:9
+        cameraImage.uvRect = mirror ? new Rect(1f, 0f, -1f, 1f) : new Rect(0f, 0f, 1f, 1f); // ctx.scale(-1, 1) / drawImage(snapCanvas)
         makeupImage.texture = makeup;                          // overlay canvas
         makeupImage.enabled = makeup != null;                  // drawn only when present
         if (logo != null) logo.SetActive(AppConfig.Current.photobooth.watermarkLogo); // optional watermark
