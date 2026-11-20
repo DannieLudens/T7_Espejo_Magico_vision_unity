@@ -45,7 +45,7 @@ public class WebGLBuildProcessor : IProcessSceneWithReport, IPostprocessBuildWit
         }
     }
 
-    // Deletes the native models from the built StreamingAssets.
+    // Deletes the native models from the built StreamingAssets and prepares the folder for Vercel.
     public void OnPostprocessBuild(BuildReport report)
     {
         if (report.summary.platform != BuildTarget.WebGL) return;
@@ -57,5 +57,25 @@ public class WebGLBuildProcessor : IProcessSceneWithReport, IPostprocessBuildWit
             File.Delete(file);                                                         // MediaPipe JS loads its own models from the CDN
             Debug.Log("[WebGLBuild] Quitado de StreamingAssets: " + model);
         }
+        SanitizeConfig(Path.Combine(folder, "config.json"));                           // the web config is public
+        File.WriteAllText(Path.Combine(report.summary.outputPath, ".vercelignore"), VercelIgnore); // keep local test files out
+    }
+
+    // Files in the build folder that must never be deployed (local test page, fake camera, docs template).
+    const string VercelIgnore =
+        "test.html\nfake-cam.js\ntest-cam.png\nStreamingAssets/config.example.json\n";
+
+    // Everything in a WebGL build is downloadable, so the published config.json drops the unsigned upload preset
+    // and the cloud name and points the photobooth to the signing function (api/cloudinary-sign.js) instead.
+    // The Snap Camera Kit token stays: it is a browser token by design, restricted by the Snap Trusted Origins.
+    static void SanitizeConfig(string path)
+    {
+        if (!File.Exists(path)) return;                                                // no config.json in the project
+        var config = JsonUtility.FromJson<AppConfig>(File.ReadAllText(path));
+        config.cloudinary.uploadPreset = "";                                           // would let anyone upload unsigned
+        config.cloudinary.cloudName = "";                                              // the function returns it
+        config.cloudinary.signUrl = "/api/cloudinary-sign";                            // Vercel Function
+        File.WriteAllText(path, JsonUtility.ToJson(config, true));
+        Debug.Log("[WebGLBuild] config.json publicado sin preset de Cloudinary (subidas firmadas).");
     }
 }

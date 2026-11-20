@@ -6,6 +6,8 @@ using UnityEngine.Networking; // UnityWebRequest, WWWForm
 
 // Uploads the photo and returns the URL for the QR (port of processAndShowQR in js/photo-booth.js).
 // Priority: Cloudinary (public URL, works on any network) -> local fallback (LAN URL + copy on the kiosk).
+// The web deploy uses signed uploads (cloudinary.signUrl, a Vercel function that keeps the API secret);
+// the local kiosk keeps the unsigned preset of the web version.
 public static class PhotoUploader
 {
     // Cloudinary upload response (only the field the QR needs).
@@ -15,14 +17,30 @@ public static class PhotoUploader
         public string secure_url; // HTTPS URL of the uploaded image
     }
 
+    // Signature returned by the signing endpoint (api/cloudinary-sign.js); every field is signed or public.
+    [Serializable]
+    class SignResponse
+    {
+        public string cloudName;      // account cloud name
+        public string apiKey;         // public API key
+        public long timestamp;        // signed timestamp (valid for 1 hour)
+        public string signature;      // SHA-1 of the signed params + API secret
+        public string folder;         // fixed destination folder
+        public string allowedFormats; // jpg only
+        public string transformation; // incoming size limit
+    }
+
     // Uploads the JPEG and calls done with the URL to encode in the QR.
     public static IEnumerator Process(byte[] jpeg, Action<string> done)
     {
         var cfg = AppConfig.Current.cloudinary;                                     // APP_CONFIG.cloudinary
-        if (cfg.enabled && !string.IsNullOrEmpty(cfg.cloudName) && !string.IsNullOrEmpty(cfg.uploadPreset))
+        bool signed = !string.IsNullOrEmpty(cfg.signUrl);                           // web deploy
+        bool unsigned = !string.IsNullOrEmpty(cfg.cloudName) && !string.IsNullOrEmpty(cfg.uploadPreset); // local kiosk
+        if (cfg.enabled && (signed || unsigned))
         {
             string url = null;                                                      // result of the upload
-            yield return UploadToCloudinary(jpeg, cfg, u => url = u);               // await uploadToCloudinary
+            if (signed) yield return UploadSigned(jpeg, cfg.signUrl, u => url = u); // secret stays on the server
+            else yield return UploadToCloudinary(jpeg, cfg, u => url = u);          // await uploadToCloudinary
             if (!string.IsNullOrEmpty(url)) { done(url); yield break; }             // public URL
         }
         done(LocalFallback(jpeg));                                                  // _fallbackLocalQR
@@ -48,6 +66,50 @@ public static class PhotoUploader
             }
             var data = JsonUtility.FromJson<CloudinaryResponse>(request.downloadHandler.text); // res.json()
             Debug.Log("[PhotoBooth] Subida a Cloudinary: " + data.secure_url);       // web log
+            done(data.secure_url);
+        }
+    }
+
+    // Asks the signing endpoint for a signature, then uploads with it (no preset or secret in the client).
+    static IEnumerator UploadSigned(byte[] jpeg, string signUrl, Action<string> done)
+    {
+        string endpoint = signUrl.StartsWith("/") ? Origin() + signUrl : signUrl;  // relative to the page
+        SignResponse sign;
+        using (var request = new UnityWebRequest(endpoint, UnityWebRequest.kHttpVerbPOST))
+        {
+            request.downloadHandler = new DownloadHandlerBuffer();                   // JSON answer
+            request.timeout = 15;
+            yield return request.SendWebRequest();
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogWarning("[PhotoBooth] Sin firma de Cloudinary, usando fallback local: " + request.responseCode + " " + request.error);
+                done(null);
+                yield break;
+            }
+            sign = JsonUtility.FromJson<SignResponse>(request.downloadHandler.text);
+        }
+
+        var form = new WWWForm();                                                   // signed upload
+        form.AddBinaryData("file", jpeg, "espejo-magico.jpg", "image/jpeg");
+        form.AddField("api_key", sign.apiKey);
+        form.AddField("timestamp", sign.timestamp.ToString());
+        form.AddField("signature", sign.signature);
+        form.AddField("folder", sign.folder);                                       // the signed values, unchanged
+        form.AddField("allowed_formats", sign.allowedFormats);
+        form.AddField("transformation", sign.transformation);
+        string upload = "https://api.cloudinary.com/v1_1/" + Uri.EscapeDataString(sign.cloudName) + "/image/upload";
+        using (var request = UnityWebRequest.Post(upload, form))
+        {
+            request.timeout = 30;                                                   // do not hang the kiosk
+            yield return request.SendWebRequest();
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogWarning("[PhotoBooth] Fallo en upload firmado, usando fallback local: " + request.responseCode + " " + request.error);
+                done(null);
+                yield break;
+            }
+            var data = JsonUtility.FromJson<CloudinaryResponse>(request.downloadHandler.text);
+            Debug.Log("[PhotoBooth] Subida a Cloudinary (firmada): " + data.secure_url);
             done(data.secure_url);
         }
     }

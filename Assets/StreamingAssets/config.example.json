@@ -2,7 +2,8 @@
   "cloudinary": {
     "enabled": true,
     "cloudName": "TU_CLOUD_NAME",
-    "uploadPreset": "TU_UPLOAD_PRESET"
+    "uploadPreset": "TU_UPLOAD_PRESET",
+    "signUrl": ""
   },
   "snap": {
     "enabled": true,

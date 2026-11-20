@@ -12,7 +12,8 @@ public class AppConfig
     {
         public bool enabled;          // upload photos to Cloudinary
         public string cloudName = ""; // account cloud name
-        public string uploadPreset = ""; // unsigned upload preset
+        public string uploadPreset = ""; // unsigned upload preset (local kiosk / Editor only)
+        public string signUrl = "";   // endpoint that signs uploads (web deploy); when set, no preset is needed
     }
 
     [Serializable]
