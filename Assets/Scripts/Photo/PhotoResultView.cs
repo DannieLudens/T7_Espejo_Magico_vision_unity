@@ -19,7 +19,7 @@ public class PhotoResultView : MonoBehaviour
 
     public event Action RetakeRequested;        // _enterPhotoBooth()
     public event Action MenuRequested;          // _transitionTo(MENU)
-    public event Action TimedOut;               // qrDisplayMs elapsed -> tutorial
+    public event Action TimedOut;               // qrDisplayMs elapsed -> mirror
 
     Texture2D _qrTexture;     // generated code
     float _returnAt = -1f;    // auto-return time, -1 while uploading

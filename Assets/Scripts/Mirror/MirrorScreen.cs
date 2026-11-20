@@ -1,8 +1,10 @@
 using UnityEngine; // Time, Vector2, Canvas
 
 // Magic mirror scene (port of the MIRROR state in js/app.js): water ripple over the webcam, a 10 s countdown
-// back to Standby that restarts whenever a hand moves, and 10 s of continuous hand presence or a pinch
-// leading to the pinch Tutorial. The hand cursors are hidden here like body.mirror-mode does.
+// that restarts whenever a hand moves, and 10 s of continuous hand presence or a pinch leading to the pinch
+// Tutorial. The hand cursors are hidden here like body.mirror-mode does.
+// Kiosk change (delivery feedback): the mirror is the resting screen, so the countdown waits paused until a
+// visitor moves a hand, and when it runs out the mirror re-arms itself instead of leaving for Standby.
 public class MirrorScreen : ScreenController
 {
     const int CountdownSeconds = 10;     // _MIRROR_CD_SECS
@@ -17,6 +19,7 @@ public class MirrorScreen : ScreenController
     float _nextTick;           // next setInterval tick (keeps its phase when the count is reset)
     float _activateAt = -1f;   // _mmActivateTimer due time, -1 = not running
     bool _leaving;             // a transition was already requested
+    bool _engaged;             // a visitor moved a hand since the countdown was last armed
     Camera _eventCamera;       // null for a Screen Space Overlay canvas
 
     // Starts the ripple and the countdown (web _onEnterState MIRROR).
@@ -26,6 +29,7 @@ public class MirrorScreen : ScreenController
         _eventCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null; // coordinate conversion
         _leaving = false;                     // fresh visit
         _activateAt = -1f;                    // no hand yet
+        _engaged = false;                     // countdown paused until someone shows up
         credits.Show(true);                   // body.mirror-mode credits
         if (HandCursor.Instance != null) HandCursor.Instance.SetSuppressed(true); // cursors display: none
         mirror.Begin();                       // startMagicMirror
@@ -55,6 +59,7 @@ public class MirrorScreen : ScreenController
         mirror.SetFinger(screenPosition, _eventCamera);                                // _mmHandMove
         _seconds = CountdownSeconds;                                                   // _resetMirrorCountdown
         countdown.Apply(_seconds, CountdownSeconds);
+        if (!_engaged) { _engaged = true; _nextTick = Time.unscaledTime + 1f; }        // first move starts the ticks
         if (_activateAt < 0f) _activateAt = Time.unscaledTime + ActivationSeconds;     // setTimeout(10000) once
     }
 
@@ -82,15 +87,18 @@ public class MirrorScreen : ScreenController
             Leave(AppState.Tutorial);                           // 10 s of interaction -> tutorial
             return;
         }
+        if (!_engaged) return;                                  // nobody here: the countdown waits full
         while (now >= _nextTick)                                // setInterval tick
         {
             _nextTick += 1f;                                    // keep the interval phase
             _seconds = Mathf.Max(0, _seconds - 1);              // count down
             countdown.Apply(_seconds, CountdownSeconds);        // ring and number
-            if (_seconds <= 0)                                  // time is up
+            if (_seconds <= 0)                                  // the visitor left
             {
-                Debug.Log("[Mirror] Countdown llegó a 0 → STANDBY"); // web log
-                Leave(AppState.Standby);
+                Debug.Log("[Mirror] Countdown llegó a 0 → el espejo espera al siguiente visitante");
+                _engaged = false;                               // pause again (web went to STANDBY)
+                _seconds = CountdownSeconds;                    // full ring for the next visitor
+                countdown.Apply(_seconds, CountdownSeconds);
                 return;
             }
         }

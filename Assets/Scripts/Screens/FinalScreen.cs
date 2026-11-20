@@ -57,16 +57,16 @@ public class FinalScreen : ScreenController
         if (Machine.Current == AppState.PhotoResult) Machine.TransitionTo(AppState.Photobooth); // sub-mode switch
     }
 
-    // "↩ Volver al inicio" from the photo mode.
+    // "↩ Volver al inicio" from the photo mode: the visit is over, back to the mirror for the next visitor.
     void OnPhotoMenu()
     {
-        if (Machine.Current == AppState.PhotoResult) Machine.TransitionTo(AppState.Menu); // _transitionTo(MENU)
+        if (Machine.Current == AppState.PhotoResult) Machine.TransitionTo(AppState.Mirror); // web went to MENU
     }
 
-    // qrDisplayMs elapsed with the QR on screen: back to the tutorial, which leads to standby.
+    // qrDisplayMs elapsed with the QR on screen: back to the mirror for the next visitor.
     void OnPhotoTimedOut()
     {
-        if (Machine.Current == AppState.PhotoResult) StartCoroutine(TransitionWhenIdle(AppState.Tutorial)); // _transitionTo(TUTORIAL)
+        if (Machine.Current == AppState.PhotoResult) StartCoroutine(TransitionWhenIdle(AppState.Mirror)); // web went to TUTORIAL
     }
 
     // Photo captured: keep it for the result mode and switch to it.
@@ -77,10 +77,10 @@ public class FinalScreen : ScreenController
         if (Machine.Current == AppState.Photobooth) Machine.TransitionTo(AppState.PhotoResult); // _showPhotoResult
     }
 
-    // "← Volver" in the photobooth goes to the presenter menu (same as the web).
+    // "← Volver" in the photobooth ends the visit: back to the mirror (no operator needed behind the scenes).
     void OnPhotoboothBack()
     {
-        if (Machine.Current == AppState.Photobooth) Machine.TransitionTo(AppState.Menu); // _transitionTo(MENU)
+        if (Machine.Current == AppState.Photobooth) Machine.TransitionTo(AppState.Mirror); // web went to MENU
     }
 
     // Image, CTA alignment, presenter name and the auto-return timer (web _setupFinal).
@@ -149,11 +149,11 @@ public class FinalScreen : ScreenController
         Machine.TransitionTo(AppState.Photobooth);    // _enterPhotoBooth()
     }
 
-    // "↩ Volver al inicio": back to the presenter menu.
+    // "↩ Volver al inicio": the start is now the mirror.
     public void OnMenuClicked()
     {
         if (Machine.Current != AppState.Final) return; // only from the result mode
-        Machine.TransitionTo(AppState.Menu);          // _transitionTo(MENU)
+        Machine.TransitionTo(AppState.Mirror);        // web went to MENU
     }
 
     // ── Hand input ───────────────────────────────────────────
@@ -240,7 +240,7 @@ public class FinalScreen : ScreenController
 
     // ── Frame update ─────────────────────────────────────────
 
-    // Finger-near effect and the 30 s auto-return to the menu.
+    // Finger-near effect and the 30 s auto-return to the mirror.
     void Update()
     {
         if (Machine == null || Machine.Current != AppState.Final) return; // result mode only
@@ -253,6 +253,6 @@ public class FinalScreen : ScreenController
 
         if (_autoReturnRequested || Time.unscaledTime - _enteredAt < autoReturnSeconds) return; // timer running
         _autoReturnRequested = true;                                // fire once
-        StartCoroutine(TransitionWhenIdle(AppState.Menu));          // auto-return to the menu
+        StartCoroutine(TransitionWhenIdle(AppState.Mirror));        // auto-return to the mirror (web went to MENU)
     }
 }

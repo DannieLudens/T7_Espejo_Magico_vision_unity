@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;    // Keyboard
 // Single-scene state machine that shows one screen at a time (port of _transitionTo in js/app.js).
 public class AppStateMachine : MonoBehaviour
 {
-    [SerializeField] AppState initialState = AppState.Standby;          // state shown at boot
+    [SerializeField] AppState initialState = AppState.Mirror;           // state shown at boot (kiosk rests in the mirror)
     [SerializeField] ScreenFader fader;                                  // black overlay between screens
     [SerializeField] ScreenController[] screens = new ScreenController[0]; // every screen instance in the scene
 
