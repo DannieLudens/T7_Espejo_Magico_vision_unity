@@ -1,14 +1,14 @@
 using UnityEngine; // Time, Vector2, Canvas
 
-// Magic mirror scene (port of the MIRROR state in js/app.js): water ripple over the webcam, a 10 s countdown
-// that restarts whenever a hand moves, and 10 s of continuous hand presence or a pinch leading to the pinch
+// Magic mirror scene (port of the MIRROR state in js/app.js): water ripple over the webcam, a 5 s countdown
+// that restarts whenever a hand moves, and 5 s of continuous hand presence or a pinch leading to the pinch
 // Tutorial. The hand cursors are hidden here like body.mirror-mode does.
 // Kiosk change (delivery feedback): the mirror is the resting screen, so the countdown waits paused until a
 // visitor moves a hand, and when it runs out the mirror re-arms itself instead of leaving for Standby.
 public class MirrorScreen : ScreenController
 {
-    const int CountdownSeconds = 10;     // _MIRROR_CD_SECS
-    const float ActivationSeconds = 10f; // mirrorActivated timer in _mmHandMove
+    const int CountdownSeconds = 5;      // _MIRROR_CD_SECS was 10 (kiosk feedback: shorter)
+    const float ActivationSeconds = 5f;  // mirrorActivated timer in _mmHandMove, was 10 s
 
     [SerializeField] MagicMirror mirror;         // water ripple renderer
     [SerializeField] MirrorCountdown countdown;  // ring in the bottom-left corner
