@@ -61,9 +61,10 @@ public class WebGLBuildProcessor : IProcessSceneWithReport, IPostprocessBuildWit
         File.WriteAllText(Path.Combine(report.summary.outputPath, ".vercelignore"), VercelIgnore); // keep local test files out
     }
 
-    // Files in the build folder that must never be deployed (local test page, fake camera, docs template).
+    // Files in the build folder that must never be deployed (local test page, fake camera, docs template,
+    // env files the Vercel CLI may create when linking).
     const string VercelIgnore =
-        "test.html\nfake-cam.js\ntest-cam.png\nStreamingAssets/config.example.json\n";
+        "test.html\nfake-cam.js\ntest-cam.png\nStreamingAssets/config.example.json\n.env*\n.gitignore\n";
 
     // Everything in a WebGL build is downloadable, so the published config.json drops the unsigned upload preset
     // and the cloud name and points the photobooth to the signing function (api/cloudinary-sign.js) instead.
