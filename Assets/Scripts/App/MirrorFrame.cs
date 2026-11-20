@@ -43,6 +43,27 @@ public class MirrorFrame : MonoBehaviour
         public Shadow None => new Shadow(0f, 0f, Color, 0f);
     }
 
+    // Everything one bulb shows in a frame: disc color, element opacity and both shadow layers.
+    struct Look
+    {
+        public Color Core;          // disc color
+        public float Opacity;       // CSS opacity of the element
+        public Shadow Glow, Halo;   // first and second box-shadow
+
+        // Creates a look.
+        public Look(Color core, float opacity, Shadow glow, Shadow halo)
+        {
+            Core = core; Opacity = opacity; Glow = glow; Halo = halo; // all fields
+        }
+
+        // Blends two looks (used to cross-fade the pulse into the progress meter).
+        public static Look Lerp(Look a, Look b, float t)
+        {
+            return new Look(Color.Lerp(a.Core, b.Core, t), Mathf.Lerp(a.Opacity, b.Opacity, t),
+                            Shadow.Lerp(a.Glow, b.Glow, t), Shadow.Lerp(a.Halo, b.Halo, t));
+        }
+    }
+
     // Runtime state of one bulb.
     class Bulb
     {
@@ -53,12 +74,18 @@ public class MirrorFrame : MonoBehaviour
         public float FlashStart = -10f; // when the current flash started
         public float FlashLength = 0.32f; // duration of the current flash animation
         public bool CameraFlash;        // cameraFlashAnim instead of bulbFlash
+        public int Wave;                // position along the perimeter (0 = bottom of the left rail)
     }
 
     readonly List<Bulb> _bulbs = new List<Bulb>();  // all bulbs, any order
     readonly List<Bulb> _byWave = new List<Bulb>(); // bulbs sorted by perimeter position (data-wave-pos)
 
     public static MirrorFrame Instance { get; private set; } // screens trigger flashes outside of pinches (dwell, clicks)
+
+    const float ProgressFade = 0.5f; // seconds to cross-fade between the pulse and the progress meter
+    bool _progressOn;                // a screen is using the bulbs as a progress meter
+    float _progress;                 // 0..1 share of the perimeter lit
+    float _progressWeight;           // 0 = pulse, 1 = progress meter (eased)
 
     // Creates the three rails and their bulbs (web initMirrorFrame).
     void Awake()
@@ -73,6 +100,21 @@ public class MirrorFrame : MonoBehaviour
         for (int i = 0; i < BulbsTop; i++) wave[BulbsSide + i] = CreateBulb(top, i, BulbsTop, false);                     // then crosses the top
         for (int i = 0; i < BulbsSide; i++) wave[BulbsSide + BulbsTop + i] = CreateBulb(right, i, BulbsSide, true);       // then descends the right
         _byWave.AddRange(wave.Values);                                                                                      // flash order
+        for (int k = 0; k < _byWave.Count; k++) _byWave[k].Wave = k;                                                        // progress order
+    }
+
+    // Uses the bulbs as a progress meter: the perimeter lights up in wave order up to `progress` (0..1).
+    // Kiosk addition for the mirror (not in the web): shows how close the visitor is to starting.
+    public void SetProgress(float progress)
+    {
+        _progressOn = true;                  // cross-fade in
+        _progress = Mathf.Clamp01(progress); // share of the perimeter
+    }
+
+    // Back to the normal pulse (cross-fades out).
+    public void ClearProgress()
+    {
+        _progressOn = false; // the meter fades away over ProgressFade
     }
 
     // Flashes on every confirmed pinch, like _onPinchConfirmed -> triggerSelectionFlash.
@@ -122,18 +164,37 @@ public class MirrorFrame : MonoBehaviour
         bulb.CameraFlash = camera; // which keyframes
     }
 
-    // Animates every bulb: pulse by default, flash keyframes while flashing.
+    // Animates every bulb: pulse by default (blended with the progress meter), flash keyframes while flashing.
     void Update()
     {
         float now = Time.unscaledTime; // CSS animations ignore game time scale
+        _progressWeight = Mathf.MoveTowards(_progressWeight, _progressOn ? 1f : 0f, Time.unscaledDeltaTime / ProgressFade); // cross-fade
+        float blend = CssEasing.Ease(_progressWeight);                 // eased weight
         foreach (var bulb in _bulbs)
         {
             float flashT = (now - bulb.FlashStart) / bulb.FlashLength; // 0..1 while flashing
             bool flashing = flashT >= 0f && flashT <= 1f;              // a flash class is applied
-            if (flashing && bulb.CameraFlash) ApplyCameraFlash(bulb, flashT); // cameraFlashAnim overrides the pulse
-            else if (flashing) ApplyFlash(bulb, flashT);               // bulbFlash overrides the pulse
-            else ApplyPulse(bulb, CssEasing.PingPong(now + bulb.Phase, PulseCycle)); // bulbPulse continues its timeline
+            Look look;
+            if (flashing && bulb.CameraFlash) look = CameraFlashLook(flashT); // cameraFlashAnim overrides everything
+            else if (flashing) look = FlashLook(flashT);               // bulbFlash overrides everything
+            else
+            {
+                look = PulseLook(CssEasing.PingPong(now + bulb.Phase, PulseCycle)); // bulbPulse continues its timeline
+                if (blend > 0f) look = Look.Lerp(look, ProgressLook(bulb, now), blend); // progress meter on top
+            }
+            Paint(bulb, look);
         }
+    }
+
+    // Progress meter look: unlit bulbs dim down, lit ones glow steady with a soft shimmer, the leading bulb fades in.
+    Look ProgressLook(Bulb bulb, float now)
+    {
+        float lit = Mathf.Clamp01(_progress * _byWave.Count - bulb.Wave);                        // 0 off, 1 on, between = leading edge
+        var off = new Look(WarmCore, 0.3f, new Shadow(4f, 2f, WarmGlow, 0.15f), PulseHaloLow.None); // waiting to light
+        float shimmer = 0.85f + 0.15f * Mathf.Sin(now * 6f + bulb.Wave * 0.7f);                  // lights are alive
+        var on = new Look(Color.Lerp(WarmCore, Color.white, 0.35f), 1f,
+                          new Shadow(10f, 5f, WarmGlow, 0.95f * shimmer), new Shadow(24f, 8f, WarmHalo, 0.6f * shimmer)); // brighter than the pulse peak
+        return Look.Lerp(off, on, lit);
     }
 
     // bulbPulse keyframes (style.css): 0%/100% rest, 50% bright.
@@ -152,48 +213,46 @@ public class MirrorFrame : MonoBehaviour
     static readonly Shadow CameraHalo0 = new Shadow(60f, 25f, Color.white, 0.75f); // 0 0 60px 25px rgba(255,255,255,.75)
 
     // bulbPulse: opacity 0.55 -> 1 -> 0.55 with both glow layers growing.
-    void ApplyPulse(Bulb bulb, float e)
+    static Look PulseLook(float e)
     {
-        Paint(bulb, WarmCore, Mathf.Lerp(0.55f, 1f, e),
-              Shadow.Lerp(PulseGlowLow, PulseGlowHigh, e), Shadow.Lerp(PulseHaloLow, PulseHaloHigh, e));
+        return new Look(WarmCore, Mathf.Lerp(0.55f, 1f, e),
+                        Shadow.Lerp(PulseGlowLow, PulseGlowHigh, e), Shadow.Lerp(PulseHaloLow, PulseHaloHigh, e));
     }
 
     // bulbFlash keyframes (0%, 60%, 100%) with ease-out per segment.
-    void ApplyFlash(Bulb bulb, float t)
+    static Look FlashLook(float t)
     {
         if (t < 0.6f) // 0% -> 60%
         {
             float k = CssEasing.EaseOut(t / 0.6f);                                    // segment progress
-            Paint(bulb, Color.Lerp(Color.white, FlashMid, k), Mathf.Lerp(1f, 0.9f, k),
-                  Shadow.Lerp(FlashGlow0, FlashGlow60, k), Shadow.Lerp(FlashHalo0, FlashHalo0.None, k)); // halo fades out
+            return new Look(Color.Lerp(Color.white, FlashMid, k), Mathf.Lerp(1f, 0.9f, k),
+                            Shadow.Lerp(FlashGlow0, FlashGlow60, k), Shadow.Lerp(FlashHalo0, FlashHalo0.None, k)); // halo fades out
         }
-        else // 60% -> 100%
-        {
-            float k = CssEasing.EaseOut((t - 0.6f) / 0.4f);                           // segment progress
-            Paint(bulb, Color.Lerp(FlashMid, WarmCore, k), Mathf.Lerp(0.9f, 0.55f, k),
-                  Shadow.Lerp(FlashGlow60, PulseGlowLow, k), FlashHalo0.None);         // back to resting warm
-        }
+        float b = CssEasing.EaseOut((t - 0.6f) / 0.4f);                               // 60% -> 100%
+        return new Look(Color.Lerp(FlashMid, WarmCore, b), Mathf.Lerp(0.9f, 0.55f, b),
+                        Shadow.Lerp(FlashGlow60, PulseGlowLow, b), FlashHalo0.None);   // back to resting warm
     }
 
     // cameraFlashAnim keyframes: white until 40%, then back to warm; box-shadow is only set at 0% and 100%,
     // so it shrinks across the whole animation (ease-out).
-    void ApplyCameraFlash(Bulb bulb, float t)
+    static Look CameraFlashLook(float t)
     {
         float k = CssEasing.EaseOut(t);                                                 // box-shadow track 0% -> 100%
         var glow = Shadow.Lerp(CameraGlow0, PulseGlowLow, k);                           // white -> warm, shrinking
         var halo = Shadow.Lerp(CameraHalo0, CameraHalo0.None, k);                       // wide halo fades out
-        if (t < 0.4f) { Paint(bulb, Color.white, 1f, glow, halo); return; }            // 0% -> 40%: solid white
+        if (t < 0.4f) return new Look(Color.white, 1f, glow, halo);                    // 0% -> 40%: solid white
         float b = CssEasing.EaseOut((t - 0.4f) / 0.6f);                                 // 40% -> 100% segment
-        Paint(bulb, Color.Lerp(Color.white, WarmCore, b), Mathf.Lerp(1f, 0.55f, b), glow, halo); // fade to rest
+        return new Look(Color.Lerp(Color.white, WarmCore, b), Mathf.Lerp(1f, 0.55f, b), glow, halo); // fade to rest
     }
 
     // Writes color, opacity and both shadow layers of a bulb.
-    void Paint(Bulb bulb, Color core, float opacity, Shadow glow, Shadow halo)
+    void Paint(Bulb bulb, Look look)
     {
-        core.a = opacity;                      // CSS opacity on the element
-        bulb.Core.color = core;                // disc color
-        PaintShadow(bulb.Glow, glow, opacity); // element opacity also dims the shadows
-        PaintShadow(bulb.Halo, halo, opacity);
+        var core = look.Core;
+        core.a = look.Opacity;                           // CSS opacity on the element
+        bulb.Core.color = core;                          // disc color
+        PaintShadow(bulb.Glow, look.Glow, look.Opacity); // element opacity also dims the shadows
+        PaintShadow(bulb.Halo, look.Halo, look.Opacity);
     }
 
     // Shows one box-shadow layer: a blurred disc of radius bulb + spread, sized to cover its blur tail.

@@ -16,6 +16,7 @@ Emoji images rendered from Noto Color Emoji (Google):
   emoji_u2705_check_mark_button.png U+2705 "check mark button"
   emoji_u2699_gear.png           U+2699  "gear"
   emoji_u1fa9e_mirror.png        U+1FA9E "mirror"
+  emoji_u270b_raised_hand.png    U+270B  "raised hand"
 Glyphs rendered from Noto Sans Math (Google):
   glyph_u21a9_return_arrow.png   U+21A9  "leftwards arrow with hook"
   glyph_u21ba_anticlockwise_arrow.png U+21BA "anticlockwise open circle arrow"

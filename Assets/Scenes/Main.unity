@@ -8358,6 +8358,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2017577502392214180, guid: 9cd16432b6adcfc489f7497beb605ce5, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 2036385649245932085, guid: 9cd16432b6adcfc489f7497beb605ce5, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -8543,6 +8547,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 5404401019394653557, guid: 9cd16432b6adcfc489f7497beb605ce5, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5459014646754211936, guid: 9cd16432b6adcfc489f7497beb605ce5, type: 3}
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 0}
@@ -11262,6 +11270,7 @@ MonoBehaviour:
   - {fileID: 766439089}
   - {fileID: 137194366}
   - {fileID: 971014051}
+  idleReturnSeconds: 30
 --- !u!4 &1227821617
 Transform:
   m_ObjectHideFlags: 0

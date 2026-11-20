@@ -1,49 +1,50 @@
-using UnityEngine; // Time, Vector2, Canvas
+using UnityEngine; // Time, Vector2, Canvas, Mathf
 
-// Magic mirror scene (port of the MIRROR state in js/app.js): water ripple over the webcam, a 5 s countdown
-// that restarts whenever a hand moves, and 5 s of continuous hand presence or a pinch leading to the pinch
-// Tutorial. The hand cursors are hidden here like body.mirror-mode does.
-// Kiosk change (delivery feedback): the mirror is the resting screen, so the countdown waits paused until a
-// visitor moves a hand, and when it runs out the mirror re-arms itself instead of leaving for Standby.
+// Magic mirror scene (port of the MIRROR state in js/app.js): water ripple over the webcam; playing with a hand
+// leads to the pinch Tutorial, and a pinch goes there right away. The hand cursors are hidden like body.mirror-mode.
+// Kiosk changes (delivery feedback): the mirror is the resting screen, and instead of the web's corner countdown
+// the frame bulbs light up around the perimeter while the visitor plays (a progress meter readable from afar),
+// a pill invites, cheers and announces the start, and a short tracking dropout only drains the progress slowly.
 public class MirrorScreen : ScreenController
 {
-    const int CountdownSeconds = 5;      // _MIRROR_CD_SECS was 10 (kiosk feedback: shorter)
-    const float ActivationSeconds = 5f;  // mirrorActivated timer in _mmHandMove, was 10 s
+    const float ActivationSeconds = 5f; // playing time that lights every bulb
+    const float HandGrace = 0.4f;       // tracking dropout that does not count as leaving
+    const float DrainSeconds = 3f;      // a full meter empties in this time once the visitor is gone
+    const float ReadyHold = 1.4f;       // "¡Comencemos!" + flash wave before the tutorial
 
-    [SerializeField] MagicMirror mirror;         // water ripple renderer
-    [SerializeField] MirrorCountdown countdown;  // ring in the bottom-left corner
-    [SerializeField] VanityCredits credits;      // bottom strip credits with "Tour Telemedellín"
-    [SerializeField] OperatorPanel ripplePanel;  // #mirror-config (key C)
+    [SerializeField] MagicMirror mirror;          // water ripple renderer
+    [SerializeField] MirrorInvitation invitation; // bottom pill
+    [SerializeField] VanityCredits credits;       // bottom strip credits with "Tour Telemedellín"
+    [SerializeField] OperatorPanel ripplePanel;   // #mirror-config (key C)
 
-    int _seconds;              // _mirrorCdSecs
-    float _nextTick;           // next setInterval tick (keeps its phase when the count is reset)
-    float _activateAt = -1f;   // _mmActivateTimer due time, -1 = not running
+    float _progress;           // 0..1 share of the bulbs lit
+    float _lastSeen = -10f;    // last time a hand was tracked
+    float _readyAt = -1f;      // meter completed, -1 = not yet
     bool _leaving;             // a transition was already requested
-    bool _engaged;             // a visitor moved a hand since the countdown was last armed
     Camera _eventCamera;       // null for a Screen Space Overlay canvas
 
-    // Starts the ripple and the countdown (web _onEnterState MIRROR).
+    // Starts the ripple and the invitation (web _onEnterState MIRROR).
     public override void OnEnter(AppState state)
     {
         var canvas = GetComponentInParent<Canvas>();                                         // root canvas
         _eventCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null; // coordinate conversion
         _leaving = false;                     // fresh visit
-        _activateAt = -1f;                    // no hand yet
-        _engaged = false;                     // countdown paused until someone shows up
+        _progress = 0f;                       // no bulbs lit
+        _readyAt = -1f;
+        _lastSeen = -10f;
         credits.Show(true);                   // body.mirror-mode credits
         if (HandCursor.Instance != null) HandCursor.Instance.SetSuppressed(true); // cursors display: none
         mirror.Begin();                       // startMagicMirror
-        countdown.Show();                     // opacity 0 -> 1
-        _seconds = CountdownSeconds;          // _startMirrorCountdown
-        countdown.Apply(_seconds, CountdownSeconds);
-        _nextTick = Time.unscaledTime + 1f;   // setInterval(1000)
+        invitation.Show(MirrorInvitation.Mode.Invite); // "Acércate y mueve tu mano"
     }
 
-    // Stops the ripple and restores the cursors (web _onLeaveState MIRROR).
+    // Stops the ripple, the meter and the pill, and restores the cursors (web _onLeaveState MIRROR).
     public override void OnExit(AppState state)
     {
         mirror.End();                         // stopMagicMirror
         credits.Hide();                       // remove mirror-mode
+        invitation.HideNow();                 // no pill on the next screen
+        if (MirrorFrame.Instance != null) MirrorFrame.Instance.ClearProgress(); // bulbs back to the pulse
         if (HandCursor.Instance != null) HandCursor.Instance.SetSuppressed(false); // cursors back
     }
 
@@ -53,55 +54,57 @@ public class MirrorScreen : ScreenController
         ripplePanel.Toggle(); // classList.toggle('hidden')
     }
 
-    // A moving hand ripples the water, restarts the countdown and arms the activation timer.
+    // A moving hand ripples the water (web _mmHandMove).
     protected override void OnHandMoved(Vector2 screenPosition)
     {
-        mirror.SetFinger(screenPosition, _eventCamera);                                // _mmHandMove
-        _seconds = CountdownSeconds;                                                   // _resetMirrorCountdown
-        countdown.Apply(_seconds, CountdownSeconds);
-        if (!_engaged) { _engaged = true; _nextTick = Time.unscaledTime + 1f; }        // first move starts the ticks
-        if (_activateAt < 0f) _activateAt = Time.unscaledTime + ActivationSeconds;     // setTimeout(10000) once
+        mirror.SetFinger(screenPosition, _eventCamera);
     }
 
-    // The hand left: stop splashing and cancel the activation timer (web _mmHandLost).
+    // The hand left: stop splashing (web _mmHandLost).
     protected override void OnHandLost()
     {
         mirror.ClearFinger();  // _mmFX = _mmFY = -1
-        _activateAt = -1f;     // clearTimeout(_mmActivateTimer)
     }
 
-    // A pinch goes straight to the tutorial (case AppState.MIRROR in _onPinchConfirmed).
+    // A pinch goes straight to the tutorial (case AppState.MIRROR in _onPinchConfirmed); the frame flashes on its own.
     protected override void OnPinchConfirmed(Vector2 screenPosition)
     {
         Leave(AppState.Tutorial); // _transitionTo(TUTORIAL)
     }
 
-    // Ticks the countdown once per second and fires the activation timer.
+    // Fills or drains the bulb meter and keeps the pill in sync.
     void Update()
     {
         if (_leaving) return;                                   // already on the way out
         float now = Time.unscaledTime;                          // timers use real time
-        if (_activateAt >= 0f && now >= _activateAt)            // mirrorActivated
+        if (_readyAt >= 0f)                                     // meter full: let the celebration play
         {
-            _activateAt = -1f;
-            Leave(AppState.Tutorial);                           // 10 s of interaction -> tutorial
+            if (now - _readyAt >= ReadyHold) Leave(AppState.Tutorial);
             return;
         }
-        if (!_engaged) return;                                  // nobody here: the countdown waits full
-        while (now >= _nextTick)                                // setInterval tick
+
+        if (HandGestures.HandVisible) _lastSeen = now;          // someone is playing
+        bool present = now - _lastSeen <= HandGrace;            // short dropouts still count as present
+        float dt = Time.unscaledDeltaTime;
+        if (present) _progress += dt / ActivationSeconds;       // fill while playing
+        else _progress -= dt / DrainSeconds;                    // drain slowly once gone
+        _progress = Mathf.Clamp01(_progress);
+
+        var frame = MirrorFrame.Instance;
+        if (frame != null)
         {
-            _nextTick += 1f;                                    // keep the interval phase
-            _seconds = Mathf.Max(0, _seconds - 1);              // count down
-            countdown.Apply(_seconds, CountdownSeconds);        // ring and number
-            if (_seconds <= 0)                                  // the visitor left
-            {
-                Debug.Log("[Mirror] Countdown llegó a 0 → el espejo espera al siguiente visitante");
-                _engaged = false;                               // pause again (web went to STANDBY)
-                _seconds = CountdownSeconds;                    // full ring for the next visitor
-                countdown.Apply(_seconds, CountdownSeconds);
-                return;
-            }
+            if (_progress > 0f) frame.SetProgress(_progress);   // bulbs light up in wave order
+            else frame.ClearProgress();                         // idle pulse
         }
+
+        if (_progress >= 1f)                                    // every bulb lit
+        {
+            _readyAt = now;
+            invitation.Show(MirrorInvitation.Mode.Ready);       // "¡Comencemos!"
+            if (frame != null) frame.TriggerSelectionFlash();   // white wave around the frame
+            return;
+        }
+        invitation.Show(present ? MirrorInvitation.Mode.Engaged : MirrorInvitation.Mode.Invite); // cheer or invite
     }
 
     // Requests one transition per visit.
