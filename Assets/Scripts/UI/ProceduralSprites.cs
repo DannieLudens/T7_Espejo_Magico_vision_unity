@@ -78,6 +78,46 @@ public static class ProceduralSprites
             (x, y) => White(Mathf.Clamp01(half - Mathf.Abs(RoundedRectDistance(x, y, size, radius) + half) + 0.5f)), new Vector4(b, b, b, b));
     }
 
+    // CSS box-shadow (0 0 blur spread) of a circle, in blur units: a disc of radius `ratio` blurred by 1
+    // (Gaussian, sigma = 0.5), drawn out to ratio + 2 where the tail is gone. Shown at 2 * blur * (ratio + 2) px.
+    // The profile is integrated over the disc, so small discs under a big blur stay as dim as Chrome draws them.
+    public static Sprite CircleShadow(float ratio)
+    {
+        const int size = 64;                        // texture side
+        const int samples = 65;                     // radial profile entries
+        const float sigma = 0.5f;                   // blur 1 = 2 sigma
+        float extent = ratio + 2f;                  // half side in blur units
+        string key = "circleShadow" + ratio.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+        if (Cache.TryGetValue(key, out var cached) && cached != null) return cached; // skip the integration
+
+        var profile = new float[samples];           // value at distance rho = extent * i / (samples - 1)
+        const int rings = 24, steps = 36;           // polar grid over the disc (half circle, mirrored)
+        float norm = 1f / (2f * Mathf.PI * sigma * sigma); // 2D Gaussian normalization
+        for (int i = 0; i < samples; i++)
+        {
+            float rho = extent * i / (samples - 1); // distance from the disc center
+            float sum = 0f;
+            for (int a = 0; a < rings; a++)
+            {
+                float r = (a + 0.5f) / rings * ratio;                       // ring radius inside the disc
+                for (int b = 0; b < steps; b++)
+                {
+                    float theta = (b + 0.5f) / steps * Mathf.PI;            // ring angle (0..pi, symmetric)
+                    float d2 = r * r + rho * rho - 2f * r * rho * Mathf.Cos(theta); // squared distance to the sample
+                    sum += Mathf.Exp(-d2 / (2f * sigma * sigma)) * r;       // Gaussian weight * polar area
+                }
+            }
+            profile[i] = Mathf.Clamp01(sum * norm * (ratio / rings) * (Mathf.PI * 2f / steps)); // integral over the disc (both halves)
+        }
+        return Create(key, size, size, (x, y) =>
+        {
+            float rho = Distance(x, y, size, size) / (size * 0.5f) * extent; // pixel distance in blur units
+            float f = Mathf.Clamp(rho / extent * (samples - 1), 0f, samples - 1); // profile index
+            int i0 = Mathf.FloorToInt(f), i1 = Mathf.Min(i0 + 1, samples - 1);
+            return White(Mathf.Lerp(profile[i0], profile[i1], f - i0));       // interpolated profile
+        }, Vector4.zero);
+    }
+
     // CSS box-shadow of an ellipse: the shape blurred by `blur` px (Gaussian, sigma = blur / 2), padded on every side.
     public static Sprite EllipseShadow(int width, int height, float blur)
     {
